@@ -20,7 +20,7 @@ if [ $# -ne 0 ]; then
 fi
 
 # Make the Folders where ESPNet data-prep files will be stored
-for dataset in train dev test; do
+for dataset in train dev; do
     log "Creating the ./data/${dataset} folders"
     mkdir -p ./data/${dataset}
 done

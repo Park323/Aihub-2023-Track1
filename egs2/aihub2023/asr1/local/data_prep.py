@@ -10,6 +10,7 @@ import argparse
 import logging
 import os
 import glob
+import pdb;pdb.set_trace()
 import tqdm
 from pathlib import Path
 import subprocess
@@ -190,8 +191,6 @@ class DatasetUtils:
 
 
 def main():
-    parser = Utils.get_parser()
-    args = parser.parse_args()
     logfmt = "%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=logfmt)
 
@@ -202,6 +201,9 @@ def main():
 
     logging.info(f"Performing Data Preparation for DEV")
     DatasetUtils.perform_data_prep(dev_files, dev_labels, "dev")
+    
+    import shutil
+    shutil.copytree("data/dev", "data/test")
 
 
 if __name__ == "__main__":

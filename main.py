@@ -1,19 +1,22 @@
-import torch
-import queue
 import os
-import random
+# import sys
+# root = os.getcwd()
+os.chdir("egs2/aihub2023/asr1")
+# local = os.getcwd()
+# sys.path.insert(0, local)
+# sys.path.insert(0, root)
+
 import warnings
-import time
-import json
 import argparse
 from glob import glob
 
-import subprocess
 
-from espnet2.tasks.asr import ASRTask
+try:
+    import nova
+except:
+    pass
 
-import nova
-from nova import DATASET_PATH
+from train import train
 
 
 def inference(path, model, **kwargs):
@@ -28,7 +31,6 @@ def inference(path, model, **kwargs):
             }
         )
     return sorted(results, key=lambda x: x['filename'])
-
 
 
 if __name__ == '__main__':
@@ -48,9 +50,4 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     if config.mode == 'train':
-        subprocess.run("cd egs2/aihub2023/asr1")
-        cmd = f"PYTHONPATH='../../..' bash asr.sh --asr_config {config.asr_config} --nbpe 1000"
-        if config.stage:
-            cmd += f'--stage {config.stage}'
-            cmd += f'--stop_stage {config.stop_stage}'
-        subprocess.run(cmd.split())
+        train(config)

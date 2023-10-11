@@ -1,9 +1,9 @@
-torch
+torch >= 1.13.1
 torch_complex
 pytorch_wpe
 levenshtein
 librosa >= 0.7.0
-numpy
+numpy >= 1.20.0
 pandas
 tqdm
 matplotlib
