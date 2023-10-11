@@ -17,7 +17,10 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-from nova import DATASET_PATH
+try:
+    from nova import DATASET_PATH
+except:
+    DATASET_PATH='data/sample'
 
 from espnet2.text.korean_separator import char2grp
 
@@ -120,14 +123,14 @@ class DatasetUtils:
         train_filenames = []
         train_transcriptions = []
         for label in train_labels:
-            filename, transcription= label.split('\t')
+            filename, transcription= label.split(',')
             train_filenames.append(filename)
             train_transcriptions.append(transcription)
         
         val_filenames = []
         val_transcriptions = []
         for label in train_labels:
-            filename, transcription= label.split('\t')
+            filename, transcription= label.split(',')
             val_filenames.append(filename)
             val_transcriptions.append(transcription)
         
@@ -154,10 +157,10 @@ class DatasetUtils:
         wav = []
 
         for uid, (filepath, label) in tqdm.tqdm(enumerate(zip(filepaths, labels))):
-            spk_id = 0
+            spk_id = "0"
             utt_id = f"{dataset}_{uid}"
             utt2spk.append(utt_id + " " + spk_id)
-            wav.append(utt_id + " " + filepath)
+            wav.append(utt_id + " " + os.path.join(DATASET_PATH, "train_data", filepath))
             label = Utils.refine_text(label)
             text.append(utt_id + " " + label)
             text_sep.append(utt_id + " " + char2grp(label))
