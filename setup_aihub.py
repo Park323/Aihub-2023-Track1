@@ -5,8 +5,8 @@ setup(
     name='espnet_nova',
     version='latest',
     install_requires=[
-        # 'torch==1.7.0',
-        # 'levenshtein',
+        'torch >= 1.7.0',
+        'levenshtein',
         'librosa >= 0.7.0',
         'numpy',
         'pandas',
