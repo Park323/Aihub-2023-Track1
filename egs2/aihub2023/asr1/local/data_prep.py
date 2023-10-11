@@ -22,6 +22,8 @@ try:
 except:
     DATASET_PATH='data/sample'
 
+print("DATASET_PATH : ", DATASET_PATH)
+
 from espnet2.text.korean_separator import char2grp
 
 
@@ -66,6 +68,7 @@ class Utils:
             description="AIHUB2023 Data Preparation steps",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
+        parser.add_argument("--dataset_path", type=str)
         
         return parser
 
@@ -124,14 +127,14 @@ class DatasetUtils:
         train_transcriptions = []
         for label in train_labels:
             filename, transcription= label.split(',')
-            train_filenames.append(filename)
+            train_filenames.append(os.path.join(train_root, filename))
             train_transcriptions.append(transcription)
         
         val_filenames = []
         val_transcriptions = []
         for label in train_labels:
             filename, transcription= label.split(',')
-            val_filenames.append(filename)
+            val_filenames.append(os.path.join(train_root, filename))
             val_transcriptions.append(transcription)
         
         return train_filenames, train_transcriptions, val_filenames, val_transcriptions
@@ -160,7 +163,7 @@ class DatasetUtils:
             spk_id = "0"
             utt_id = f"{dataset}_{uid}"
             utt2spk.append(utt_id + " " + spk_id)
-            wav.append(utt_id + " " + os.path.join(DATASET_PATH, "train_data", filepath))
+            wav.append(utt_id + " " + filepath)
             label = Utils.refine_text(label)
             text.append(utt_id + " " + label)
             text_sep.append(utt_id + " " + char2grp(label))
@@ -189,11 +192,13 @@ class DatasetUtils:
         Utils.save_list_to_file(wav, wav_file)
 
 
-def main():
+def main(): 
+    parser = Utils.get_parser()
+    args = parser.parse_args()
     logfmt = "%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=logfmt)
 
-    train_files, train_labels, dev_files, dev_labels = DatasetUtils.train_val_files(DATASET_PATH)
+    train_files, train_labels, dev_files, dev_labels = DatasetUtils.train_val_files(args.dataset_path)
     
     logging.info(f"Performing Data Preparation for TRAIN")
     DatasetUtils.perform_data_prep(train_files, train_labels, "train")
@@ -202,7 +207,7 @@ def main():
     DatasetUtils.perform_data_prep(dev_files, dev_labels, "dev")
     
     import shutil
-    shutil.copytree("data/dev", "data/test")
+    shutil.copytree("data/dev", "data/test", dirs_exist_ok=True)
 
 
 if __name__ == "__main__":

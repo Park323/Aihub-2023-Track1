@@ -13,8 +13,12 @@ from glob import glob
 
 try:
     import nova
+    from nova import DATASET_PATH
 except:
-    pass
+    DATASET_PATH = "data/sample"
+
+with open("db.sh", "w") as f:
+    f.write(f"AIHUB2023={DATASET_PATH}\n")
 
 from train import train
 
