@@ -1,0 +1,1 @@
+../../TEMPLATE/avsr1/path.sh
