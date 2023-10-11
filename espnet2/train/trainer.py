@@ -35,6 +35,8 @@ from espnet2.train.reporter import Reporter, SubReporter
 from espnet2.utils.build_dataclass import build_dataclass
 from espnet2.utils.kwargs2args import kwargs2args
 
+import nova
+
 if torch.distributed.is_available():
     from torch.distributed import ReduceOp
 
@@ -360,7 +362,8 @@ class Trainer:
                 )
 
                 # 5. Save and log the model and update the link to the best model
-                torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
+                # torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
+                nova.save(f"output_dir / {iepoch}epoch.pth")
 
                 # Creates a sym link latest.pth -> {iepoch}epoch.pth
                 p = output_dir / "latest.pth"

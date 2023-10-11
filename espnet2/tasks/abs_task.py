@@ -1326,6 +1326,10 @@ class AbsTask(ABC):
             else:
                 plot_attention_iter_factory = None
 
+            # AIHUB2023. Bind model
+            from utils import bind_model
+            bind_model(model=model, optimizer=optimizers[0])
+
             # 8. Start training
             if args.use_wandb:
                 if wandb is None:

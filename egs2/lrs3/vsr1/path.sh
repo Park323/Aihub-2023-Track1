@@ -1,1 +1,0 @@
-../../TEMPLATE/vsr1/path.sh
