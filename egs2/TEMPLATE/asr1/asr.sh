@@ -275,6 +275,7 @@ EOF
 )
 
 log "$0 $*"
+echo "Current directory is: $PWD"
 # Save command line args for logging (they will be lost after utils/parse_options.sh)
 run_args=$(scripts/utils/print_args.sh $0 "$@")
 . utils/parse_options.sh

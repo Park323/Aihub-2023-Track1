@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 import glob
-import pdb;pdb.set_trace()
 import tqdm
 from pathlib import Path
 import subprocess

@@ -17,9 +17,9 @@ def train(config):
     from sys import path
     cmd = f"bash run.sh --asr_config {config.config}"
     if config.nbpe:
-        cmd += f"--nbpe {config.nbpe}"
+        cmd += f" --nbpe {config.nbpe}"
     if config.stage:
-        cmd += f"--stage {config.stage}"
+        cmd += f" --stage {config.stage}"
     subprocess.run(cmd.split(), 
                    env=dict(PYTHONPATH=":".join([*path, "../../.."])))
     
