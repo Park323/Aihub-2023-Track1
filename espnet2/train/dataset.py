@@ -29,7 +29,6 @@ from espnet2.fileio.read_text import (
 from espnet2.fileio.rttm import RttmReader
 from espnet2.fileio.score_scp import SingingScoreReader
 from espnet2.fileio.sound_scp import SoundScpReader
-from espnet2.fileio.mp4_scp import Mp4ScpReader
 from espnet2.utils.sized_dict import SizedDict
 
 

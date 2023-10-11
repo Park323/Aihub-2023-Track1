@@ -56,9 +56,7 @@ from espnet2.asr.frontend.resnet import ResNet18
 from espnet2.asr.frontend.s3prl import S3prlFrontend
 from espnet2.asr.frontend.whisper import WhisperFrontend
 from espnet2.asr.frontend.windowing import SlidingWindow
-from espnet2.asr.iip_model import IIPnetASRModel
 from espnet2.asr.maskctc_model import MaskCTCModel
-from espnet2.asr.pit_espnet_model import ESPnetASRModel as PITESPnetModel
 from espnet2.asr.postencoder.abs_postencoder import AbsPostEncoder
 from espnet2.asr.postencoder.mlp import SimpleMLP
 from espnet2.asr.postencoder.hugging_face_transformers_postencoder import (
@@ -129,9 +127,7 @@ model_choices = ClassChoices(
     "model",
     classes=dict(
         espnet=ESPnetASRModel,
-        iipnet=IIPnetASRModel,
         maskctc=MaskCTCModel,
-        pit_espnet=PITESPnetModel,
     ),
     type_check=AbsESPnetModel,
     default="espnet",
@@ -516,7 +512,7 @@ class ASRTask(AbsTask):
         return retval
 
     @classmethod
-    def build_model(cls, args: argparse.Namespace) -> Union[ESPnetASRModel, IIPnetASRModel]:
+    def build_model(cls, args: argparse.Namespace) -> ESPnetASRModel:
         assert check_argument_types()
         if isinstance(args.token_list, str):
             with open(args.token_list, encoding="utf-8") as f:

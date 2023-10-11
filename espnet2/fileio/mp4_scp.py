@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Tuple, Union
 from typeguard import check_argument_types
 
-import cv2
 import numpy as np
 
 from espnet2.fileio.read_text import read_2columns_text

@@ -4,7 +4,6 @@ from io import StringIO
 from pathlib import Path
 from typing import Callable, Collection, Dict, Iterator, Tuple, Union
 
-import cv2
 import kaldiio
 import numpy as np
 import soundfile
@@ -38,26 +37,6 @@ def load_kaldi(input):
     return array
 
 
-def load_mp4(input, color:str='rgb'):
-    cap = cv2.VideoCapture(input)
-    
-    retval = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret: break
-        if color == 'gray':
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        retval.append(frame)
-    cap.release()
-
-    retval = np.array(retval, dtype=float)
-    if color=='gray':
-        retval = np.expand_dims(retval, axis=-1)
-    # Scale to [0,1]
-    retval /= 255.0
-    return retval
-
-
 DATA_TYPES = {
     "sound": lambda x: soundfile.read(x)[0],
     "kaldi_ark": load_kaldi,
@@ -73,8 +52,6 @@ DATA_TYPES = {
         StringIO(x), ndmin=1, dtype=np.float32, delimiter=","
     ),
     "text": lambda x: x,
-    "mp4": lambda x: load_mp4(x, color='gray'),
-    "color": load_mp4,
 }
 
 

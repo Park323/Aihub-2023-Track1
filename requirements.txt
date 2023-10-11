@@ -1,0 +1,26 @@
+torch
+torch_complex
+pytorch_wpe
+levenshtein
+librosa >= 0.7.0
+numpy
+pandas
+tqdm
+matplotlib
+astropy
+sentencepiece
+torchaudio
+pydub
+glob2
+pyyaml
+typeguard <= 2.13.3
+humanfriendly
+kaldiio
+resampy
+einops
+opt_einsum
+hydra-core
+h5py
+g2p_en
+jamo
+espnet-tts-frontend
