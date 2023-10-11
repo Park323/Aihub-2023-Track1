@@ -43,6 +43,7 @@ if __name__ == '__main__':
     args.add_argument('--pause', type=int, default=0)
     
     args.add_argument('--config', type=str, required=True)
+    args.add_argument('--nbpe', type=int, required=True)
     args.add_argument('--stage', type=int)
     args.add_argument('--stop_stage', type=int)
 
