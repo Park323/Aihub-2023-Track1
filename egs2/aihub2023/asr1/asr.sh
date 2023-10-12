@@ -60,6 +60,7 @@ min_wav_duration=0.1 # Minimum duration in second.
 max_wav_duration=20  # Maximum duration in second.
 
 # Tokenization related
+kor_sep=false
 token_type=bpe      # Tokenization type (char or bpe).
 nbpe=30             # The number of BPE vocabulary.
 bpemode=unigram     # Mode of BPE (unigram or bpe).
@@ -1248,8 +1249,13 @@ if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ] && ! [[ " ${skip_stages} " =~
     _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${_scp},speech,${_type} "
     # shellcheck disable=SC2068
     for i in ${!ref_text_files[@]}; do
-        _opts+="--train_data_path_and_name_and_type ${_asr_train_dir}/${ref_text_files[$i]},${ref_text_names[$i]},text "
-        _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${ref_text_files[$i]},${ref_text_names[$i]},text "
+        if ${kor_sep}; then
+            _text="text_sep"
+        else
+            _text="text"
+        fi
+        _opts+="--train_data_path_and_name_and_type ${_asr_train_dir}/${_text},${ref_text_names[$i]},${_text} "
+        _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${_text},${ref_text_names[$i]},${_text} "
     done
 
     # shellcheck disable=SC2046,SC2086
@@ -1357,14 +1363,18 @@ if [ ${stage} -le 11 ] && [ ${stop_stage} -ge 11 ] && ! [[ " ${skip_stages} " =~
         # If you met a memory error when parsing text files, this option may help you.
         # The corpus is split into subsets and each subset is used for training one by one in order,
         # so the memory footprint can be limited to the memory required for each dataset.
-
+        if ${kor_sep}; then
+            _text="text_sep"
+        else
+            _text="text"
+        fi
         _split_dir="${asr_stats_dir}/splits${num_splits_asr}"
         if [ ! -f "${_split_dir}/.done" ]; then
             rm -f "${_split_dir}/.done"
             ${python} -m espnet2.bin.split_scps \
               --scps \
                   "${_asr_train_dir}/${_scp}" \
-                  "${_asr_train_dir}/text" \
+                  "${_asr_train_dir}/${_text}" \
                   "${asr_stats_dir}/train/speech_shape" \
                   "${asr_stats_dir}/train/text_shape.${token_type}" \
               --num_splits "${num_splits_asr}" \
@@ -1379,7 +1389,7 @@ if [ ${stage} -le 11 ] && [ ${stop_stage} -ge 11 ] && ! [[ " ${skip_stages} " =~
         # shellcheck disable=SC2068
         for i in ${!ref_text_names[@]}; do
             _opts+="--fold_length ${asr_text_fold_length} "
-            _opts+="--train_data_path_and_name_and_type ${_split_dir}/${ref_text_files[$i]},${ref_text_names[$i]},text "
+            _opts+="--train_data_path_and_name_and_type ${_split_dir}/${_text},${ref_text_names[$i]},${_text} "
             _opts+="--train_shape_file ${_split_dir}/${ref_text_names[$i]}_shape.${token_type} "
         done
         _opts+="--multiple_iterator true "
@@ -1398,14 +1408,14 @@ if [ ${stage} -le 11 ] && [ ${stop_stage} -ge 11 ] && ! [[ " ${skip_stages} " =~
         # shellcheck disable=SC2068
         for i in ${!ref_text_names[@]}; do
             _opts+="--fold_length ${asr_text_fold_length} "
-            _opts+="--train_data_path_and_name_and_type ${_asr_train_dir}/${ref_text_files[$i]},${ref_text_names[$i]},text "
+            _opts+="--train_data_path_and_name_and_type ${_asr_train_dir}/${ref_text_files[$i]},${ref_text_names[$i]},${_text} "
             _opts+="--train_shape_file ${asr_stats_dir}/train/${ref_text_names[$i]}_shape.${token_type} "
         done
     fi
 
     # shellcheck disable=SC2068
     for i in ${!ref_text_names[@]}; do
-        _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${ref_text_files[$i]},${ref_text_names[$i]},text "
+        _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${ref_text_files[$i]},${ref_text_names[$i]},${_text} "
         _opts+="--valid_shape_file ${asr_stats_dir}/valid/${ref_text_names[$i]}_shape.${token_type} "
     done
 
