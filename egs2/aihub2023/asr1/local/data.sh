@@ -38,11 +38,14 @@ python3 ./local/data_prep.py --dataset_path ${AIHUB2023}
 log "Generating the spk2utt files"
 utils/utt2spk_to_spk2utt.pl data/train/utt2spk > data/train/spk2utt
 utils/utt2spk_to_spk2utt.pl data/dev/utt2spk > data/dev/spk2utt
+utils/utt2spk_to_spk2utt.pl data/test/utt2spk > data/test/spk2utt
 
 log "Fix sorting issues by calling fix_data_dir.sh"
 utils/fix_data_dir.sh data/train
 utils/fix_data_dir.sh data/dev
+utils/fix_data_dir.sh data/test
 
 log "Validate the data directory"
 utils/validate_data_dir.sh data/train --no-feats
 utils/validate_data_dir.sh data/dev --no-feats
+utils/validate_data_dir.sh data/test --no-feats

@@ -276,6 +276,7 @@ EOF
 
 log "$0 $*"
 echo "Current directory is: $PWD"
+export PATH="/opt/conda/bin:$PATH"
 # Save command line args for logging (they will be lost after utils/parse_options.sh)
 run_args=$(scripts/utils/print_args.sh $0 "$@")
 . utils/parse_options.sh
@@ -626,7 +627,6 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ] && ! [[ " ${skip_stages} " =~ [
             fi
             utils/copy_data_dir.sh --validate_opts --non-print data/"${dset}" "${data_feats}${_suf}/${dset}"
             rm -f ${data_feats}${_suf}/${dset}/{segments,wav.scp,reco2file_and_channel,reco2dur}
-
             # Copy reference text files if there is more than 1 reference
             if [ ${#ref_text_files[@]} -gt 1 ]; then
                 # shellcheck disable=SC2068
@@ -650,7 +650,6 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ] && ! [[ " ${skip_stages} " =~ [
                 --multi-columns-input "${multi_columns_input_wav_scp}" \
                 --multi-columns-output "${multi_columns_output_wav_scp}" \
                 "data/${dset}/wav.scp" "${data_feats}${_suf}/${dset}"
-
             echo "${feats_type}" > "${data_feats}${_suf}/${dset}/feats_type"
             if "${multi_columns_output_wav_scp}"; then
                 echo "multi_${audio_format}" > "${data_feats}${_suf}/${dset}/audio_format"

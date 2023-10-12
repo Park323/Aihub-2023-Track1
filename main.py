@@ -17,6 +17,9 @@ try:
 except:
     DATASET_PATH = "data/sample"
 
+print("DATASET_PATH :", DATASET_PATH)
+print(os.listdir(DATASET_PATH))
+
 with open("db.sh", "w") as f:
     f.write(f"AIHUB2023={DATASET_PATH}\n")
 

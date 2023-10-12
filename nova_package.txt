@@ -2,5 +2,6 @@ curl
 zip
 libsndfile1
 ffmpeg
+libencode-perl
 
 

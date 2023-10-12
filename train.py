@@ -20,7 +20,6 @@ def train(config):
         cmd += f" --nbpe {config.nbpe}"
     if config.stage:
         cmd += f" --stage {config.stage}"
-    import pdb;pdb.set_trace()
     subprocess.run(cmd.split(), 
                    env=dict(PYTHONPATH=":".join([*path, "../../.."])))
     

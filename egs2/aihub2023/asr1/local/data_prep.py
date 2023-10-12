@@ -17,13 +17,6 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-try:
-    from nova import DATASET_PATH
-except:
-    DATASET_PATH='data/sample'
-
-print("DATASET_PATH : ", DATASET_PATH)
-
 from espnet2.text.korean_separator import char2grp
 
 
@@ -90,8 +83,8 @@ class DatasetUtils:
         train_files (list) : Paths of Training Data
         val_files (list) : Paths of Validation Data
         """
-        saved_train_paths = os.path.join(train_path, "train_subset")
-        saved_val_paths = os.path.join(train_path, "val_subset")
+        saved_train_paths = os.path.join("data", "train_subset")
+        saved_val_paths = os.path.join("data", "val_subset")
         
         if os.path.exists(saved_train_paths) and os.path.exists(saved_val_paths):
             logging.info("Use the last train/val split logs")
@@ -106,7 +99,9 @@ class DatasetUtils:
         
             with open(label_path) as f:
                 lines = f.readlines()[1:]
-            
+            logging.info("============TRAIN TRANSCRIPTIONS============")
+            logging.info("".join(lines))
+            logging.info("============================================")
             labels = [x.strip() for x in lines]
             
             np.random.seed(random_seed)
@@ -125,14 +120,17 @@ class DatasetUtils:
         
         train_filenames = []
         train_transcriptions = []
-        for label in train_labels:
-            filename, transcription= label.split(',')
-            train_filenames.append(os.path.join(train_root, filename))
-            train_transcriptions.append(transcription)
+        for label in tqdm.tqdm(train_labels):
+            try:
+                filename, transcription= label.split(',')
+                train_filenames.append(os.path.join(train_root, filename))
+                train_transcriptions.append(transcription)
+            except:
+                logging.info(f"[Error] : {label}")
         
         val_filenames = []
         val_transcriptions = []
-        for label in train_labels:
+        for label in tqdm.tqdm(val_labels):
             filename, transcription= label.split(',')
             val_filenames.append(os.path.join(train_root, filename))
             val_transcriptions.append(transcription)
@@ -160,7 +158,7 @@ class DatasetUtils:
         wav = []
 
         for uid, (filepath, label) in tqdm.tqdm(enumerate(zip(filepaths, labels))):
-            spk_id = "0"
+            spk_id = str(uid)
             utt_id = f"{dataset}_{uid}"
             utt2spk.append(utt_id + " " + spk_id)
             wav.append(utt_id + " " + filepath)
@@ -198,16 +196,16 @@ def main():
     logfmt = "%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=logfmt)
 
-    train_files, train_labels, dev_files, dev_labels = DatasetUtils.train_val_files(args.dataset_path)
+    train_files, train_labels, dev_files, dev_labels = DatasetUtils.train_val_files(os.path.join(args.dataset_path, "train"))
     
     logging.info(f"Performing Data Preparation for TRAIN")
     DatasetUtils.perform_data_prep(train_files, train_labels, "train")
-
+    
     logging.info(f"Performing Data Preparation for DEV")
     DatasetUtils.perform_data_prep(dev_files, dev_labels, "dev")
     
     import shutil
-    shutil.copytree("data/dev", "data/test", dirs_exist_ok=True)
+    shutil.copytree("data/dev", "data/test")
 
 
 if __name__ == "__main__":
