@@ -18,8 +18,8 @@ def train(config):
     cmd = f"bash run.sh --asr_config {config.config}"
     if config.nbpe:
         cmd += f" --nbpe {config.nbpe}"
-    if config.stage:
-        cmd += f" --stage {config.stage}"
+    if config.args:
+        cmd += f" {config.args}"
     subprocess.run(cmd.split(), 
                    env=dict(PYTHONPATH=":".join([*path, "../../.."])))
     

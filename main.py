@@ -51,8 +51,7 @@ if __name__ == '__main__':
     
     args.add_argument('--config', type=str, required=True)
     args.add_argument('--nbpe', type=int, required=True)
-    args.add_argument('--stage', type=int)
-    args.add_argument('--stop_stage', type=int)
+    args.add_argument('--args', type=str)
 
     config = args.parse_args()
     warnings.filterwarnings('ignore')

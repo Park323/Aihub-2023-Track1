@@ -902,6 +902,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ] && ! [[ " ${skip_stages} " =~ [
             --model_prefix="${bpeprefix}" \
             --character_coverage=${bpe_char_cover} \
             --input_sentence_size="${bpe_input_sentence_size}" \
+            --normalization_rule_name=identity \
             ${_opts_spm}
 
         {
