@@ -22,24 +22,9 @@ from espnet2.text.korean_separator import char2grp
 
 class Utils:
     @staticmethod
-    def unzip_groups(transcript):
-        # Use the latter one, which is grammatically correct
-        pattern = '(\(([^(/)]+)\)?([^(/)]*))\/?(\(?([^(/)]+)\)(\3)?)'
-        if re.search(pattern, transcript):
-            _transcript = re.sub(pattern, f"\{2}", transcript)
-            _transcript = re.sub('[(/)]', "", _transcript)
-            result = Utils.unzip_groups(_transcript)
-        else:
-            result = transcript
-        return result
-    
-    @staticmethod
     def refine_text(text: str) -> str:
         text_val = text.strip()
-        # text_val = re.sub('\xa0',' ',text_val) # \xa0 : space
-        # text_val = re.sub('[Xx]',' ',text_val) # x : mute
-        # text_val = Utils.unzip_groups(text_val) # Cases : (A)/(B) (A)(B) (A)a/(B)a
-        # text_val = re.sub('[/\u2028\u2029]', '', text_val) # Unusual line/paragraph separators
+        text_val = re.sub('[^가-힣\s]','',text_val)
         return text_val
 
     @staticmethod

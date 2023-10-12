@@ -912,6 +912,9 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ] && ! [[ " ${skip_stages} " =~ [
         echo "${sos_eos}"
         } > "${token_list}"
 
+        # Print bpe token list
+        cat "${token_list}"
+
     elif [ "${token_type}" = char ] || [ "${token_type}" = word ]; then
         log "Stage 5: Generate character level token_list from ${lm_train_text}"
 
@@ -1249,20 +1252,40 @@ if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ] && ! [[ " ${skip_stages} " =~
     done
 
     # shellcheck disable=SC2046,SC2086
-    ${train_cmd} JOB=1:"${_nj}" "${_logdir}"/stats.JOB.log \
-        ${python} -m espnet2.bin.${asr_task}_train \
-            --collect_stats true \
-            --use_preprocessor true \
-            --bpemodel "${bpemodel}" \
-            --token_type "${token_type}" \
-            --token_list "${token_list}" \
-            --non_linguistic_symbols "${nlsyms_txt}" \
-            --cleaner "${cleaner}" \
-            --g2p "${g2p}" \
-            --train_shape_file "${_logdir}/train.JOB.scp" \
-            --valid_shape_file "${_logdir}/valid.JOB.scp" \
-            --output_dir "${_logdir}/stats.JOB" \
-            ${_opts} ${asr_args} || { cat $(grep -l -i error "${_logdir}"/stats.*.log) ; exit 1; }
+    for JOB in $(seq 1 $_nj); do
+        if [ "$JOB" -eq 1 ]; then
+            # For JOB=1, print to the console
+            ${python} -m espnet2.bin.${asr_task}_train \
+                --collect_stats true \
+                --use_preprocessor true \
+                --bpemodel "${bpemodel}" \
+                --token_type "${token_type}" \
+                --token_list "${token_list}" \
+                --non_linguistic_symbols "${nlsyms_txt}" \
+                --cleaner "${cleaner}" \
+                --g2p "${g2p}" \
+                --train_shape_file "${_logdir}/train.${JOB}.scp" \
+                --valid_shape_file "${_logdir}/valid.${JOB}.scp" \
+                --output_dir "${_logdir}/stats.${JOB}" \
+                ${_opts} ${asr_args}
+        else
+            # For other JOB numbers, redirect to a log file
+            ${train_cmd} JOB=${JOB} "${_logdir}/stats.${JOB}.log" \
+                ${python} -m espnet2.bin.${asr_task}_train \
+                    --collect_stats true \
+                    --use_preprocessor true \
+                    --bpemodel "${bpemodel}" \
+                    --token_type "${token_type}" \
+                    --token_list "${token_list}" \
+                    --non_linguistic_symbols "${nlsyms_txt}" \
+                    --cleaner "${cleaner}" \
+                    --g2p "${g2p}" \
+                    --train_shape_file "${_logdir}/train.${JOB}.scp" \
+                    --valid_shape_file "${_logdir}/valid.${JOB}.scp" \
+                    --output_dir "${_logdir}/stats.${JOB}" \
+                    ${_opts} ${asr_args} || { cat $(grep -l -i error "${_logdir}"/stats.*.log) ; exit 1; }
+        fi
+    done
 
     # 4. Aggregate shape files
     _opts=
@@ -1398,29 +1421,48 @@ if [ ${stage} -le 11 ] && [ ${stop_stage} -ge 11 ] && ! [[ " ${skip_stages} " =~
     fi
 
     # shellcheck disable=SC2086
-    ${python} -m espnet2.bin.launch \
-        --cmd "${cuda_cmd} --name ${jobname}" \
-        --log "${asr_exp}"/train.log \
+    ${python} -m espnet2.bin.${asr_task}_train \
+        --use_preprocessor true \
+        --bpemodel "${bpemodel}" \
+        --token_type "${token_type}" \
+        --token_list "${token_list}" \
+        --non_linguistic_symbols "${nlsyms_txt}" \
+        --cleaner "${cleaner}" \
+        --g2p "${g2p}" \
+        --valid_data_path_and_name_and_type "${_asr_valid_dir}/${_scp},speech,${_type}" \
+        --valid_shape_file "${asr_stats_dir}/valid/speech_shape" \
+        --resume true \
+        ${pretrained_model:+--init_param $pretrained_model} \
+        --ignore_init_mismatch ${ignore_init_mismatch} \
+        --fold_length "${_fold_length}" \
+        --output_dir "${asr_exp}" \
+        --multiprocessing_distributed true \
         --ngpu "${ngpu}" \
-        --num_nodes "${num_nodes}" \
-        --init_file_prefix "${asr_exp}"/.dist_init_ \
-        --multiprocessing_distributed true -- \
-        ${python} -m espnet2.bin.${asr_task}_train \
-            --use_preprocessor true \
-            --bpemodel "${bpemodel}" \
-            --token_type "${token_type}" \
-            --token_list "${token_list}" \
-            --non_linguistic_symbols "${nlsyms_txt}" \
-            --cleaner "${cleaner}" \
-            --g2p "${g2p}" \
-            --valid_data_path_and_name_and_type "${_asr_valid_dir}/${_scp},speech,${_type}" \
-            --valid_shape_file "${asr_stats_dir}/valid/speech_shape" \
-            --resume true \
-            ${pretrained_model:+--init_param $pretrained_model} \
-            --ignore_init_mismatch ${ignore_init_mismatch} \
-            --fold_length "${_fold_length}" \
-            --output_dir "${asr_exp}" \
-            ${_opts} ${asr_args}
+        ${_opts} ${asr_args} | tee "${asr_exp}"/train.log
+
+    # ${python} -m espnet2.bin.launch \
+    #     --cmd "${cuda_cmd} --name ${jobname}" \
+    #     --log "${asr_exp}"/train.log \
+    #     --ngpu "${ngpu}" \
+    #     --num_nodes "${num_nodes}" \
+    #     --init_file_prefix "${asr_exp}"/.dist_init_ \
+    #     --multiprocessing_distributed true -- \
+    #     ${python} -m espnet2.bin.${asr_task}_train \
+    #         --use_preprocessor true \
+    #         --bpemodel "${bpemodel}" \
+    #         --token_type "${token_type}" \
+    #         --token_list "${token_list}" \
+    #         --non_linguistic_symbols "${nlsyms_txt}" \
+    #         --cleaner "${cleaner}" \
+    #         --g2p "${g2p}" \
+    #         --valid_data_path_and_name_and_type "${_asr_valid_dir}/${_scp},speech,${_type}" \
+    #         --valid_shape_file "${asr_stats_dir}/valid/speech_shape" \
+    #         --resume true \
+    #         ${pretrained_model:+--init_param $pretrained_model} \
+    #         --ignore_init_mismatch ${ignore_init_mismatch} \
+    #         --fold_length "${_fold_length}" \
+    #         --output_dir "${asr_exp}" \
+    #         ${_opts} ${asr_args}
 
 fi
 

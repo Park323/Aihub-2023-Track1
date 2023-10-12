@@ -24,3 +24,4 @@ h5py
 g2p_en
 jamo
 espnet-tts-frontend
+tensorboard

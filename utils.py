@@ -2,8 +2,10 @@ import os
 
 import torch
 
-import nova
-from nova import DATASET_PATH
+try:
+    import nova
+except:
+    pass
 
 
 def bind_model(model, optimizer=None):
@@ -26,4 +28,8 @@ def bind_model(model, optimizer=None):
     def infer(path, **kwargs):
         return inference(path, model)
 
-    nova.bind(save=save, load=load, infer=infer)  # 'nova.bind' function must be called at the end.
+    try:
+        nova.bind(save=save, load=load, infer=infer)  # 'nova.bind' function must be called at the end.
+    except:
+        print("No NOVA module.")
+    
