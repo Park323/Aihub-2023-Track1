@@ -2,8 +2,8 @@ import subprocess
 
 import torch
 
-# from local.data_prep import main as prepare_data
-# from espnet2.tasks.asr import ASRTask
+from espnet2.tasks.asr import ASRTask
+
 
 def run_perl(input_path, output_path):
     # Run the Perl script using subprocess.run
@@ -15,34 +15,28 @@ def train(config):
     
     # Whole process ver.
     from sys import path
-    cmd = f"bash run.sh --asr_config {config.config}"
-    if config.nbpe:
-        cmd += f" --nbpe {config.nbpe}"
+    cmd = f"bash run.sh --asr_config {config.config} --asr_tag aihub"
+    if config.kor_sep:
+        cmd += f" --bpe_train_text data/train/text_sep"
     if config.args:
         cmd += f" {config.args}"
     subprocess.run(cmd.split(), 
                    env=dict(PYTHONPATH=":".join([*path, "../../.."])))
     
-    # # Separated processes ver.
+    # Step 11
+    stats_dir = f"asr_stats_raw_en_bpe{config.nbpe}"
+    text_file = "text_sep" if config.kor_sep else "text"
+    cmd = f"""
+        --use_preprocessor true --bpemodel data/kr_token_list/bpe_unigram{config.nbpe}/bpe.model 
+        --token_type bpe --token_list data/kr_token_list/bpe_unigram{config.nbpe}/tokens.txt --non_linguistic_symbols none --cleaner none --g2p none 
+        --config {config.config} --output_dir exp/asr_aihub --frontend_conf fs=16k 
+        --train_data_path_and_name_and_type dump/raw/train/wav.scp,speech,sound --train_shape_file exp/{stats_dir}/train/speech_shape 
+        --train_data_path_and_name_and_type dump/raw/train/{text_file},text,text --train_shape_file exp/{stats_dir}/train/text_shape.bpe
+        --valid_data_path_and_name_and_type dump/raw/dev/wav.scp,speech,sound --valid_shape_file exp/{stats_dir}/valid/speech_shape 
+        --valid_data_path_and_name_and_type dump/raw/dev/{text_file},text,text --valid_shape_file exp/{stats_dir}/valid/text_shape.bpe 
+        --ignore_init_mismatch false --ngpu {torch.cuda.device_count()} --multiprocessing_distributed True --resume false"""
+    parser = ASRTask.get_parser()
+    args = parser.parse_args(cmd)
+    ASRTask.main(args)
     
-    # # Step 1
-    # prepare_data()
-    
-    # print("Generating the spk2utt files")
-    # run_perl("data/train/utt2spk", "data/train/spk2utt")
-    # run_perl("data/dev/utt2spk", "data/dev/spk2utt")
-    
-    # print("Fix sorting issues by calling fix_data_dir.sh")
-    # subprocess.run(["utils/fix_data_dir.sh", "data/train"])
-    # subprocess.run(["utils/fix_data_dir.sh", "data/dev"])
-
-    # print("Validate the data directory")
-    # subprocess.run(["utils/validate_data_dir.sh", "data/train", "--no-feats"])
-    # subprocess.run(["utils/validate_data_dir.sh", "data/dev", "--no-feats"])
-    
-    # # Step 2
-    
-    # # Step 3
-    
-    # # Step 4
-    
+    print("Train Finished")

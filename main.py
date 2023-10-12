@@ -1,15 +1,9 @@
 import os
-# import sys
-# root = os.getcwd()
 os.chdir("egs2/aihub2023/asr1")
-# local = os.getcwd()
-# sys.path.insert(0, local)
-# sys.path.insert(0, root)
 
 import warnings
 import argparse
 from glob import glob
-
 
 try:
     import nova
@@ -18,26 +12,11 @@ except:
     DATASET_PATH = "data/sample"
 
 print("DATASET_PATH :", DATASET_PATH)
-print(os.listdir(DATASET_PATH))
 
 with open("db.sh", "w") as f:
     f.write(f"AIHUB2023={DATASET_PATH}\n")
 
 from train import train
-
-
-def inference(path, model, **kwargs):
-    model.eval()
-
-    results = []
-    for i in glob(os.path.join(path, '*')):
-        results.append(
-            {
-                'filename': i.split('/')[-1],
-                'text': single_infer(model, i)[0]
-            }
-        )
-    return sorted(results, key=lambda x: x['filename'])
 
 
 if __name__ == '__main__':
@@ -51,6 +30,7 @@ if __name__ == '__main__':
     
     args.add_argument('--config', type=str, required=True)
     args.add_argument('--nbpe', type=int, required=True)
+    args.add_argument('--kor_sep', action='store_true')
     args.add_argument('--args', type=str)
 
     config = args.parse_args()

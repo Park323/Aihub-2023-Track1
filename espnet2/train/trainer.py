@@ -38,7 +38,7 @@ from espnet2.utils.kwargs2args import kwargs2args
 try:
     import nova
 except:
-    print("No module named `nova`")
+    logging.info("No module named `nova`")
 
 if torch.distributed.is_available():
     from torch.distributed import ReduceOp
@@ -348,27 +348,46 @@ class Trainer:
                     reporter.tensorboard_add_scalar(valid_summary_writer, key1="valid")
                 if trainer_options.use_wandb:
                     reporter.wandb_log()
+                import traceback
+                try:
+                    nova_stats = vars(reporter)
+                    nova_stats_train = nova_stats["stats"][iepoch]["train"]
+                    nova_stats_valid = nova_stats["stats"][iepoch]["valid"]
+                    nova.report(
+                        summary=True,
+                        epoch=nova_stats["epoch"],
+                        train_loss=nova_stats_train["loss"],
+                        train_cer =nova_stats_train.get("cer", 0.0),
+                        val_loss  =nova_stats_valid["loss"],
+                        val_cer   =nova_stats_valid.get("cer",0.0),
+                    )
+                except Exception:
+                    traceback.print_exc()
 
                 # 4. Save/Update the checkpoint
-                torch.save(
-                    {
-                        "model": model.state_dict(),
-                        "reporter": reporter.state_dict(),
-                        "optimizers": [o.state_dict() for o in optimizers],
-                        "schedulers": [
-                            s.state_dict() if s is not None else None
-                            for s in schedulers
-                        ],
-                        "scaler": scaler.state_dict() if scaler is not None else None,
-                    },
-                    output_dir / "checkpoint.pth",
-                )
+                # torch.save(
+                #     {
+                #         "model": model.state_dict(),
+                #         "reporter": reporter.state_dict(),
+                #         "optimizers": [o.state_dict() for o in optimizers],
+                #         "schedulers": [
+                #             s.state_dict() if s is not None else None
+                #             for s in schedulers
+                #         ],
+                #         "scaler": scaler.state_dict() if scaler is not None else None,
+                #     },
+                #     output_dir / "checkpoint.pth",
+                # )
 
                 # 5. Save and log the model and update the link to the best model
+                import traceback
                 try:
-                    nova.save(f"output_dir / {iepoch}epoch.pth")
-                except:
+                    nova.save(iepoch)
+                    logging.info(f"{iepoch}th model has been saved with NOVA")
+                except Exception as e:
+                    traceback.print_exc()
                     torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
+                    logging.warning(f"{iepoch}th model has been saved with torch")
 
                 # Creates a sym link latest.pth -> {iepoch}epoch.pth
                 p = output_dir / "latest.pth"
@@ -415,37 +434,37 @@ class Trainer:
                     ]
                     wandb.log_artifact(artifact, aliases=aliases)
 
-                # 6. Remove the model files excluding n-best epoch and latest epoch
-                _removed = []
-                # Get the union set of the n-best among multiple criterion
-                nbests = set().union(
-                    *[
-                        set(reporter.sort_epochs(ph, k, m)[: max(keep_nbest_models)])
-                        for ph, k, m in trainer_options.best_model_criterion
-                        if reporter.has(ph, k)
-                    ]
-                )
+                # # 6. Remove the model files excluding n-best epoch and latest epoch
+                # _removed = []
+                # # Get the union set of the n-best among multiple criterion
+                # nbests = set().union(
+                #     *[
+                #         set(reporter.sort_epochs(ph, k, m)[: max(keep_nbest_models)])
+                #         for ph, k, m in trainer_options.best_model_criterion
+                #         if reporter.has(ph, k)
+                #     ]
+                # )
 
-                # Generated n-best averaged model
-                if (
-                    trainer_options.nbest_averaging_interval > 0
-                    and iepoch % trainer_options.nbest_averaging_interval == 0
-                ):
-                    average_nbest_models(
-                        reporter=reporter,
-                        output_dir=output_dir,
-                        best_model_criterion=trainer_options.best_model_criterion,
-                        nbest=keep_nbest_models,
-                        suffix=f"till{iepoch}epoch",
-                    )
+                # # Generated n-best averaged model
+                # if (
+                #     trainer_options.nbest_averaging_interval > 0
+                #     and iepoch % trainer_options.nbest_averaging_interval == 0
+                # ):
+                #     average_nbest_models(
+                #         reporter=reporter,
+                #         output_dir=output_dir,
+                #         best_model_criterion=trainer_options.best_model_criterion,
+                #         nbest=keep_nbest_models,
+                #         suffix=f"till{iepoch}epoch",
+                #     )
 
-                for e in range(1, iepoch):
-                    p = output_dir / f"{e}epoch.pth"
-                    if p.exists() and e not in nbests:
-                        p.unlink()
-                        _removed.append(str(p))
-                if len(_removed) != 0:
-                    logging.info("The model files were removed: " + ", ".join(_removed))
+                # for e in range(1, iepoch):
+                #     p = output_dir / f"{e}epoch.pth"
+                #     if p.exists() and e not in nbests:
+                #         p.unlink()
+                #         _removed.append(str(p))
+                # if len(_removed) != 0:
+                #     logging.info("The model files were removed: " + ", ".join(_removed))
 
             # 7. If any updating haven't happened, stops the training
             if all_steps_are_invalid:
@@ -469,12 +488,15 @@ class Trainer:
 
         # Generated n-best averaged model
         if not distributed_option.distributed or distributed_option.dist_rank == 0:
-            average_nbest_models(
-                reporter=reporter,
-                output_dir=output_dir,
-                best_model_criterion=trainer_options.best_model_criterion,
-                nbest=keep_nbest_models,
-            )
+            try:
+                average_nbest_models(
+                    reporter=reporter,
+                    output_dir=output_dir,
+                    best_model_criterion=trainer_options.best_model_criterion,
+                    nbest=keep_nbest_models,
+                )
+            except:
+                print("Averaging Failed")
 
     @classmethod
     def train_one_epoch(

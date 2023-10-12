@@ -20,7 +20,6 @@ from espnet2.asr.transducer.beam_search_transducer import (
 from espnet2.asr.transducer.beam_search_transducer import Hypothesis as TransHypothesis
 from espnet2.fileio.datadir_writer import DatadirWriter
 from espnet2.tasks.asr import ASRTask
-from espnet2.tasks.enh_s2t import EnhS2TTask
 from espnet2.tasks.lm import LMTask
 from espnet2.text.build_tokenizer import build_tokenizer
 from espnet2.text.token_id_converter import TokenIDConverter
@@ -106,7 +105,7 @@ class Speech2Text:
     ):
         assert check_argument_types()
 
-        task = ASRTask if not enh_s2t_task else EnhS2TTask
+        task = ASRTask
 
         if quantize_asr_model or quantize_lm:
             if quantize_dtype == "float16" and torch.__version__ < LooseVersion(
