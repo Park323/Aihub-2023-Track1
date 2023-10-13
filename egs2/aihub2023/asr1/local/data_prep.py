@@ -84,9 +84,9 @@ class DatasetUtils:
         
             with open(label_path) as f:
                 lines = f.readlines()[1:]
-            logging.info("============TRAIN TRANSCRIPTIONS============")
-            logging.info("".join(lines))
-            logging.info("============================================")
+            # logging.info("============TRAIN TRANSCRIPTIONS============")
+            # logging.info("".join(lines))
+            # logging.info("============================================")
             labels = [x.strip() for x in lines]
             
             np.random.seed(random_seed)

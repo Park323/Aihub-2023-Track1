@@ -60,6 +60,7 @@ if __name__ == '__main__':
     
     args.add_argument('--config', type=str, required=True)
     args.add_argument('--nbpe', type=int, required=True)
+    args.add_argument('--token_type', type=str, required=True)
     args.add_argument('--kor_sep', action='store_true')
     args.add_argument('--args', type=str)
 
@@ -70,12 +71,17 @@ if __name__ == '__main__':
         train_prep(config)
 
     # Build model
-    stats_dir = f"asr_stats_raw_kr_bpe{config.nbpe}"
+    if config.token_type == "bpe":
+        stats_dir = f"asr_stats_raw_kr_bpe{config.nbpe}"
+        spm_dir   = f"data/kr_token_list/{"sep" if config.kor_sep else "raw"}/bpe_unigram{config.nbpe}"
+    else:
+        stats_dir = f"asr_stats_raw_kr_{config.token_type}"
+        spm_dir   = f"data/kr_token_list/{config.token_type}"
     text_file = "text_sep" if config.kor_sep else "text"
     cmd = f"""
-        --use_preprocessor true --bpemodel data/kr_token_list/bpe_unigram{config.nbpe}/bpe.model 
-        --token_type bpe --token_list data/kr_token_list/bpe_unigram{config.nbpe}/tokens.txt --non_linguistic_symbols none --cleaner none --g2p none 
-        --config {config.config} --output_dir exp/asr_aihub --frontend_conf fs=16k 
+        --config {config.config} --output_dir exp/asr_aihub --frontend_conf fs=16k --use_preprocessor true 
+        --token_type {config.token_type} --bpemodel {spm_dir}/bpe.model --token_list {spm_dir}/tokens.txt 
+        --non_linguistic_symbols none --cleaner none --g2p none 
         --train_data_path_and_name_and_type dump/raw/train/wav.scp,speech,sound --train_shape_file exp/{stats_dir}/train/speech_shape 
         --train_data_path_and_name_and_type dump/raw/train/{text_file},text,text --train_shape_file exp/{stats_dir}/train/text_shape.bpe
         --valid_data_path_and_name_and_type dump/raw/dev/wav.scp,speech,sound --valid_shape_file exp/{stats_dir}/valid/speech_shape 
@@ -87,7 +93,7 @@ if __name__ == '__main__':
     
     # AIHUB2023. Bind model
     bind_model(model=model)
-            
+
     if config.mode == "train":
         ASRTask.main(args, model=model)
         
