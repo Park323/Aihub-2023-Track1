@@ -22,12 +22,15 @@ speed_perturb_factors= # "1.0"
 
 inference_args=
 
+skip_stages=
+
 
 ./asr.sh \
     --skip_data_prep false \
     --skip_train false \
     --skip_eval false \
     --stage 1 \
+    --skip_stages "${skip_stages}" \
     --lang kr \
     --ngpu 1 \
     --nj 32 \

@@ -61,6 +61,8 @@ max_wav_duration=20  # Maximum duration in second.
 
 # Tokenization related
 kor_sep=false
+bpemodel_opt=
+token_list_opt=
 token_type=bpe      # Tokenization type (char or bpe).
 nbpe=30             # The number of BPE vocabulary.
 bpemode=unigram     # Mode of BPE (unigram or bpe).
@@ -537,27 +539,27 @@ if [ -z "${inference_tag}" ]; then
 fi
 
 if "${skip_data_prep}"; then
-    skip_stages+="1 2 3 4 5 "
+    skip_stages+=" 1 2 3 4 5"
 fi
 if "${skip_train}"; then
-    skip_stages+="2 4 5 6 7 8 9 10 11 "
+    skip_stages+=" 2 4 5 6 7 8 9 10 11"
 elif ! "${use_lm}"; then
-    skip_stages+="6 7 8 "
+    skip_stages+=" 6 7 8"
 fi
 if ! "${use_ngram}"; then
-    skip_stages+="9 "
+    skip_stages+=" 9"
 fi
 if "${skip_eval}"; then
-    skip_stages+="12 13 "
+    skip_stages+=" 12 13"
 fi
 if [ -n "${download_model}" ]; then
-    skip_stages+="14 "
+    skip_stages+=" 14"
 fi
 if "${skip_upload}"; then
-    skip_stages+="14 15 "
+    skip_stages+=" 14 15"
 fi
 if "${skip_upload_hf}"; then
-    skip_stages+="14 16 "
+    skip_stages+=" 14 16"
 fi
 skip_stages=$(echo "${skip_stages}" | tr ' ' '\n' | sort -nu | tr '\n' ' ')
 log "Skipped stages: ${skip_stages}"
@@ -1258,6 +1260,9 @@ if [ ${stage} -le 10 ] && [ ${stop_stage} -ge 10 ] && ! [[ " ${skip_stages} " =~
         _opts+="--valid_data_path_and_name_and_type ${_asr_valid_dir}/${_text},${ref_text_names[$i]},${_text} "
     done
 
+    # Overwrite !!!!!!!!!!!
+    bpemodel="${bpemodel_opt}"
+    token_list="${token_list_opt}"
     # shellcheck disable=SC2046,SC2086
     for JOB in $(seq 1 $_nj); do
         if [ "$JOB" -eq 1 ]; then

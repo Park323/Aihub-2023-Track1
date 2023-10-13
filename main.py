@@ -4,11 +4,10 @@ os.chdir("egs2/aihub2023/asr1")
 import logging
 import warnings
 import argparse
-from glob import glob
+import subprocess
 
 import torch
 
-from train import train_prep
 from inference import inference
 from espnet2.tasks.asr import ASRTask
 
@@ -67,16 +66,26 @@ if __name__ == '__main__':
     config = args.parse_args()
     warnings.filterwarnings('ignore')
 
-    if config.mode == 'train':
-        train_prep(config)
-
-    # Build model
+    # Parse args
     if config.token_type == "bpe":
         stats_dir = f"asr_stats_raw_kr_bpe{config.nbpe}"
-        spm_dir   = f"data/kr_token_list/{"sep" if config.kor_sep else "raw"}/bpe_unigram{config.nbpe}"
+        sub_dir   ="sep" if config.kor_sep else "raw"
+        spm_dir   = f"data/kr_token_list/{sub_dir}/bpe_unigram{config.nbpe}"
     else:
         stats_dir = f"asr_stats_raw_kr_{config.token_type}"
         spm_dir   = f"data/kr_token_list/{config.token_type}"
+    
+    # Build model
+    if config.mode == 'train':
+        # Whole process ver.
+        from sys import path
+        cmd = f"bash run.sh --nbpe {config.nbpe} --token_type {config.token_type} --asr_config {config.config} \
+                            --bpemodel_opt {spm_dir}/bpe.model --token_list_opt {spm_dir}/tokens.txt --asr_tag aihub --stop_stage 10 --skip_stages 5"
+        if config.args:
+            cmd += f" {config.args}"
+        subprocess.run(cmd.split(), 
+                    env=dict(PYTHONPATH=":".join([*path, "../../.."])))
+    
     text_file = "text_sep" if config.kor_sep else "text"
     cmd = f"""
         --config {config.config} --output_dir exp/asr_aihub --frontend_conf fs=16k --use_preprocessor true 
@@ -87,6 +96,7 @@ if __name__ == '__main__':
         --valid_data_path_and_name_and_type dump/raw/dev/wav.scp,speech,sound --valid_shape_file exp/{stats_dir}/valid/speech_shape 
         --valid_data_path_and_name_and_type dump/raw/dev/{text_file},text,text --valid_shape_file exp/{stats_dir}/valid/text_shape.bpe 
         --ignore_init_mismatch false --ngpu {torch.cuda.device_count()} --multiprocessing_distributed True --resume false"""
+    
     parser = ASRTask.get_parser()
     args = parser.parse_args(args=cmd.split())
     model = ASRTask.build_model(args=args)
