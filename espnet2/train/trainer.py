@@ -358,7 +358,6 @@ class Trainer:
                             summary=True,
                             epoch=nova_stats["epoch"],
                             train_loss=nova_stats_train["loss"],
-                            train_cer =nova_stats_train.get("cer", 0.0),
                             val_loss  =nova_stats_valid["loss"],
                             val_cer   =nova_stats_valid.get("cer",0.0),
                         )

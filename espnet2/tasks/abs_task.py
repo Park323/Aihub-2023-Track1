@@ -1043,7 +1043,7 @@ class AbsTask(ABC):
         file.write(yaml_no_alias_safe_dump(config, indent=4, sort_keys=False))
 
     @classmethod
-    def main(cls, args: argparse.Namespace = None, cmd: Sequence[str] = None):
+    def main(cls, args: argparse.Namespace = None, cmd: Sequence[str] = None, model=None):
         assert check_argument_types()
         print(get_commandline_args(), file=sys.stderr)
         if args is None:
@@ -1060,7 +1060,7 @@ class AbsTask(ABC):
         # "distributed" is decided using the other command args
         resolve_distributed_mode(args)
         if not args.distributed or not args.multiprocessing_distributed:
-            cls.main_worker(args)
+            cls.main_worker(args, model=model)
 
         else:
             assert args.ngpu > 1, args.ngpu
@@ -1114,7 +1114,7 @@ class AbsTask(ABC):
                 pass
 
     @classmethod
-    def main_worker(cls, args: argparse.Namespace):
+    def main_worker(cls, args: argparse.Namespace, model=None):
         assert check_argument_types()
 
         # 0. Init distributed process
@@ -1171,7 +1171,10 @@ class AbsTask(ABC):
             logging.info("Skipping model building in collect_stats stage.")
         else:
             # 2. Build model
-            model = cls.build_model(args=args)
+            if model:
+                pass
+            else:
+                model = cls.build_model(args=args)
             if not isinstance(model, AbsESPnetModel):
                 raise RuntimeError(
                     f"model must inherit {AbsESPnetModel.__name__},"
@@ -1325,10 +1328,6 @@ class AbsTask(ABC):
                 )
             else:
                 plot_attention_iter_factory = None
-
-            # AIHUB2023. Bind model
-            from utils import bind_model
-            bind_model(model=model, optimizer=optimizers[0])
 
             # 8. Start training
             if args.use_wandb:

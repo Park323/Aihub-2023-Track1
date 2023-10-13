@@ -1,13 +1,15 @@
 import os
 import sys
 os.chdir("egs2/aihub2023/asr1")
-
 import logging
 import warnings
 import argparse
 from glob import glob
 
-from train import train
+import torch
+
+from train import train_prep
+from inference import inference
 
 try:
     import nova
@@ -20,6 +22,30 @@ print("DATASET_PATH :", DATASET_PATH)
 
 with open("db.sh", "w") as f:
     f.write(f"AIHUB2023={DATASET_PATH}\n")
+
+
+def bind_model(model, optimizer=None):
+    def save(path, *args, **kwargs):
+        state = {'model': model.state_dict()}
+        if optimizer:
+            state.update({'optimizer': optimizer.state_dict()})
+        torch.save(state, os.path.join(path, 'model.pt'))
+        print(f'NOVA saved the model in `{path}`')
+
+    def load(path, *args, **kwargs):
+        state = torch.load(os.path.join(path, 'model.pt'))
+        model.load_state_dict(state['model'])
+        if 'optimizer' in state and optimizer:
+            optimizer.load_state_dict(state['optimizer'])
+        print(f'Model loaded from {path}')
+
+    # 추론
+    def infer(path, **kwargs):
+        return inference(path, model)
+
+    if nova:
+        nova.bind(save=save, load=load, infer=infer)  # 'nova.bind' function must be called at the end.
+        logging.info("NOVA successfully binded the model")
 
 
 if __name__ == '__main__':
@@ -40,9 +66,33 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
 
     if config.mode == 'train':
-        train(config)
+        train_prep(config)
+
+    # Build model
+    stats_dir = f"asr_stats_raw_kr_bpe{config.nbpe}"
+    text_file = "text_sep" if config.kor_sep else "text"
+    cmd = f"""
+        --use_preprocessor true --bpemodel data/kr_token_list/bpe_unigram{config.nbpe}/bpe.model 
+        --token_type bpe --token_list data/kr_token_list/bpe_unigram{config.nbpe}/tokens.txt --non_linguistic_symbols none --cleaner none --g2p none 
+        --config {config.config} --output_dir exp/asr_aihub --frontend_conf fs=16k 
+        --train_data_path_and_name_and_type dump/raw/train/wav.scp,speech,sound --train_shape_file exp/{stats_dir}/train/speech_shape 
+        --train_data_path_and_name_and_type dump/raw/train/{text_file},text,text --train_shape_file exp/{stats_dir}/train/text_shape.bpe
+        --valid_data_path_and_name_and_type dump/raw/dev/wav.scp,speech,sound --valid_shape_file exp/{stats_dir}/valid/speech_shape 
+        --valid_data_path_and_name_and_type dump/raw/dev/{text_file},text,text --valid_shape_file exp/{stats_dir}/valid/text_shape.bpe 
+        --ignore_init_mismatch false --ngpu {torch.cuda.device_count()} --multiprocessing_distributed True --resume false"""
+    parser = ASRTask.get_parser()
+    args = parser.parse_args(args=cmd.split())
+    model = ASRTask.build_model(args=args)
     
-    if nova:
-        print("Paused")
-        nova.paused(scope=locals())
+    # AIHUB2023. Bind model
+    from utils import bind_model
+    bind_model(model=model)
+            
+    if config.mode == "train":
+        ASRTask.main(args, model=model)
+        
+        print("Train Finished")
+    
+        if nova:
+            nova.paused(scope=locals())
     

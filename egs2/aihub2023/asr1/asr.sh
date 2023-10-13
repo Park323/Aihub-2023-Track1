@@ -915,7 +915,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ] && ! [[ " ${skip_stages} " =~ [
         } > "${token_list}"
 
         # Print bpe token list
-        cat "${token_list}"
+        # cat "${token_list}"
 
     elif [ "${token_type}" = char ] || [ "${token_type}" = word ]; then
         log "Stage 5: Generate character level token_list from ${lm_train_text}"
