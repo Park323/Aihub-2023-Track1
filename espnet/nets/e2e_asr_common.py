@@ -108,7 +108,8 @@ class ErrorCalculator(object):
     """
 
     def __init__(
-        self, char_list, sym_space, sym_blank, report_cer=False, report_wer=False
+        self, char_list, sym_space, sym_blank, report_cer=False, report_wer=False, 
+        tokenizer_conf:dict=None, normalize:bool=False
     ):
         """Construct an ErrorCalculator object."""
         super(ErrorCalculator, self).__init__()
@@ -116,6 +117,11 @@ class ErrorCalculator(object):
         self.report_cer = report_cer
         self.report_wer = report_wer
 
+        if tokenizer_conf:
+            from espnet2.text.build_tokenizer import build_tokenizer
+            self.tokenizer = build_tokenizer(**tokenizer_conf)
+            self.normalize = normalize
+            
         self.char_list = char_list
         self.space = sym_space
         self.blank = sym_blank
@@ -147,7 +153,7 @@ class ErrorCalculator(object):
         elif not self.report_cer and not self.report_wer:
             return cer, wer
 
-        seqs_hat, seqs_true = self.convert_to_char(ys_hat, ys_pad)
+        seqs_hat, seqs_true = self.convert_to_char_spm(ys_hat, ys_pad)
         if self.report_cer:
             cer = self.calculate_cer(seqs_hat, seqs_true)
 
@@ -214,6 +220,30 @@ class ErrorCalculator(object):
             seqs_true.append(seq_true_text)
         return seqs_hat, seqs_true
 
+    def convert_to_char_spm(self, ys_hat, ys_pad):
+        """Convert index to character.
+
+        :param torch.Tensor seqs_hat: prediction (batch, seqlen)
+        :param torch.Tensor seqs_true: reference (batch, seqlen)
+        :return: token list of prediction
+        :rtype list
+        :return: token list of reference
+        :rtype list
+        """
+        seqs_hat, seqs_true = [], []
+        for i, y_hat in enumerate(ys_hat):
+            y_true = ys_pad[i]
+            eos_true = np.where(y_true == -1)[0]
+            ymax = eos_true[0] if len(eos_true) > 0 else len(y_true)
+            # NOTE: padding index (-1) in y_true is used to pad y_hat
+            seq_hat  = [self.char_list[int(idx)] for idx in y_hat[:ymax]]
+            seq_true = [self.char_list[int(idx)] for idx in y_true if int(idx) != -1]
+            seq_hat_text  = self.tokenizer.tokens2text(seq_hat)
+            seq_true_text = self.tokenizer.tokens2text(seq_true)
+            seqs_hat.append(seq_hat_text)
+            seqs_true.append(seq_true_text)
+        return seqs_hat, seqs_true
+
     def calculate_cer(self, seqs_hat, seqs_true):
         """Calculate sentence-level CER score.
 
@@ -227,6 +257,11 @@ class ErrorCalculator(object):
         char_eds, char_ref_lens = [], []
         for i, seq_hat_text in enumerate(seqs_hat):
             seq_true_text = seqs_true[i]
+            # NOTE(JK) Normalize for separated tokens in KR
+            if self.normalize:
+                from espnet2.text.korean_separator import grp2char
+                seq_hat_text  = grp2char(seq_hat_text)
+                seq_true_text = grp2char(seq_true_text)
             hyp_chars = seq_hat_text.replace(" ", "")
             ref_chars = seq_true_text.replace(" ", "")
             char_eds.append(editdistance.eval(hyp_chars, ref_chars))

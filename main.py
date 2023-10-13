@@ -1,22 +1,25 @@
 import os
+import sys
 os.chdir("egs2/aihub2023/asr1")
 
+import logging
 import warnings
 import argparse
 from glob import glob
+
+from train import train
 
 try:
     import nova
     from nova import DATASET_PATH
 except:
+    nova = None
     DATASET_PATH = "data/sample"
 
 print("DATASET_PATH :", DATASET_PATH)
 
 with open("db.sh", "w") as f:
     f.write(f"AIHUB2023={DATASET_PATH}\n")
-
-from train import train
 
 
 if __name__ == '__main__':
@@ -38,3 +41,9 @@ if __name__ == '__main__':
 
     if config.mode == 'train':
         train(config)
+    
+    print("All Process Finished")
+        
+    if nova:
+        nova.paused(scope=locals())
+    

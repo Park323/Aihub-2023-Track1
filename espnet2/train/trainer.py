@@ -38,7 +38,7 @@ from espnet2.utils.kwargs2args import kwargs2args
 try:
     import nova
 except:
-    logging.info("No module named `nova`")
+    nova = None
 
 if torch.distributed.is_available():
     from torch.distributed import ReduceOp
@@ -349,20 +349,21 @@ class Trainer:
                 if trainer_options.use_wandb:
                     reporter.wandb_log()
                 import traceback
-                try:
+                if nova:
                     nova_stats = vars(reporter)
                     nova_stats_train = nova_stats["stats"][iepoch]["train"]
                     nova_stats_valid = nova_stats["stats"][iepoch]["valid"]
-                    nova.report(
-                        summary=True,
-                        epoch=nova_stats["epoch"],
-                        train_loss=nova_stats_train["loss"],
-                        train_cer =nova_stats_train.get("cer", 0.0),
-                        val_loss  =nova_stats_valid["loss"],
-                        val_cer   =nova_stats_valid.get("cer",0.0),
-                    )
-                except Exception:
-                    traceback.print_exc()
+                    try:
+                        nova.report(
+                            summary=True,
+                            epoch=nova_stats["epoch"],
+                            train_loss=nova_stats_train["loss"],
+                            train_cer =nova_stats_train.get("cer", 0.0),
+                            val_loss  =nova_stats_valid["loss"],
+                            val_cer   =nova_stats_valid.get("cer",0.0),
+                        )
+                    except Exception:
+                        traceback.print_exc()
 
                 # 4. Save/Update the checkpoint
                 # torch.save(
@@ -381,9 +382,8 @@ class Trainer:
 
                 # 5. Save and log the model and update the link to the best model
                 import traceback
-                try:
+                if nova:
                     nova.save(iepoch)
-                    logging.info(f"{iepoch}th model has been saved with NOVA")
                 except Exception as e:
                     traceback.print_exc()
                     torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
