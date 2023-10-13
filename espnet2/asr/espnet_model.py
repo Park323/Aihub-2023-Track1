@@ -217,6 +217,10 @@ class ESPnetASRModel(AbsESPnetModel):
             self.lang_token_id = None
         
         self.pretrained_pt = pretrained_pt
+        
+        self.token_normalize = token_normalize
+        self.token_type = token_type
+        self.bpemodel = bpemodel
 
     def forward(
         self,

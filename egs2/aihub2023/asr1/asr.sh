@@ -934,7 +934,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ] && ! [[ " ${skip_stages} " =~ [
         # 0 is reserved for CTC-blank for ASR and also used as ignore-index in the other task
         ${python} -m espnet2.bin.tokenize_text  \
             --token_type "${token_type}" \
-            --input "${data_feats}/lm_train.txt" --output "${token_list}" ${_opts} \
+            --input "${lm_train_text}" --output "${token_list}" ${_opts} \
             --field 2- \
             --cleaner "${cleaner}" \
             --g2p "${g2p}" \

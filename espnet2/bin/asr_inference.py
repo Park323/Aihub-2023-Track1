@@ -72,8 +72,7 @@ class Speech2Text:
 
     def __init__(
         self,
-        asr_train_config: Union[Path, str] = None,
-        asr_model_file: Union[Path, str] = None,
+        asr_model,
         transducer_conf: dict = None,
         lm_train_config: Union[Path, str] = None,
         lm_file: Union[Path, str] = None,
@@ -121,9 +120,9 @@ class Speech2Text:
 
         # 1. Build ASR model
         scorers = {}
-        asr_model, asr_train_args = task.build_model_from_file(
-            asr_train_config, asr_model_file, device
-        )
+        # asr_model, asr_train_args = task.build_model_from_file(
+        #     asr_train_config, asr_model_file, device
+        # )
 
         if enh_s2t_task:
             asr_model.inherite_attributes(
@@ -325,9 +324,9 @@ class Speech2Text:
 
         # 5. [Optional] Build Text converter: e.g. bpe-sym -> Text
         if token_type is None:
-            token_type = asr_train_args.token_type
+            token_type = asr_model.token_type
         if bpemodel is None:
-            bpemodel = asr_train_args.bpemodel
+            bpemodel = asr_model.bpemodel
 
         if token_type is None:
             tokenizer = None
@@ -353,7 +352,6 @@ class Speech2Text:
         logging.info(f"Text tokenizer: {tokenizer}")
 
         self.asr_model = asr_model
-        self.asr_train_args = asr_train_args
         self.converter = converter
         self.tokenizer = tokenizer
         self.beam_search = beam_search

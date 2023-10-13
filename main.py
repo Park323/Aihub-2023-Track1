@@ -42,8 +42,7 @@ if __name__ == '__main__':
     if config.mode == 'train':
         train(config)
     
-    print("All Process Finished")
-        
     if nova:
+        print("Paused")
         nova.paused(scope=locals())
     
