@@ -10,6 +10,7 @@ import torch
 
 from train import train_prep
 from inference import inference
+from espnet2.tasks.asr import ASRTask
 
 try:
     import nova
@@ -85,7 +86,6 @@ if __name__ == '__main__':
     model = ASRTask.build_model(args=args)
     
     # AIHUB2023. Bind model
-    from utils import bind_model
     bind_model(model=model)
             
     if config.mode == "train":

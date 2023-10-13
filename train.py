@@ -1,9 +1,5 @@
 import subprocess
 
-import torch
-
-from espnet2.tasks.asr import ASRTask
-
 
 def run_perl(input_path, output_path):
     # Run the Perl script using subprocess.run
