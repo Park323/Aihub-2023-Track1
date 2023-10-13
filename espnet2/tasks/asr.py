@@ -640,6 +640,10 @@ class ASRTask(AbsTask):
             ctc=ctc,
             joint_network=joint_network,
             token_list=token_list,
+            token_type=args.token_type,
+            bpemodel=args.bpemodel,
+            non_linguistic_symbols=args.non_linguistic_symbols,
+            g2p_type=args.g2p,
             **args.model_conf,
         )
 

@@ -70,6 +70,11 @@ class ESPnetASRModel(AbsESPnetModel):
         extract_order: Sequence[str] = ["front","aug","norm"],
         lang_token_id: int = -1,
         pretrained_pt: str = None,
+        token_normalize=False,
+        token_type=None,
+        bpemodel=None,
+        non_linguistic_symbols=None,
+        g2p_type=None,
     ):
         assert check_argument_types()
         assert 0.0 <= ctc_weight <= 1.0, ctc_weight
@@ -181,7 +186,14 @@ class ESPnetASRModel(AbsESPnetModel):
 
             if report_cer or report_wer:
                 self.error_calculator = ErrorCalculator(
-                    token_list, sym_space, sym_blank, report_cer, report_wer
+                    token_list, sym_space, sym_blank, report_cer, report_wer,
+                    tokenizer_conf = dict(            
+                        token_type=token_type,
+                        bpemodel=bpemodel,
+                        non_linguistic_symbols=non_linguistic_symbols,
+                        g2p_type=g2p_type
+                    ),
+                    normalize=token_normalize
                 )
 
         if ctc_weight == 0.0:

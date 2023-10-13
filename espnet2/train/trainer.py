@@ -384,8 +384,7 @@ class Trainer:
                 import traceback
                 if nova:
                     nova.save(iepoch)
-                except Exception as e:
-                    traceback.print_exc()
+                else:
                     torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
                     logging.warning(f"{iepoch}th model has been saved with torch")
 
