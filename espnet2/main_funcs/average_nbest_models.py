@@ -1,12 +1,13 @@
 import logging
 import warnings
+from copy import deepcopy as copy
 from pathlib import Path
 from typing import Collection, Optional, Sequence, Union
 
 import torch
 try:
     import nova
-else:
+except:
     nova = None
 
 from typeguard import check_argument_types
@@ -81,9 +82,9 @@ def average_nbest_models(
                 for e, _ in epoch_and_values[:n]:
                     if e not in _loaded:
                         if nova:
-                            cur_states = model.state_dict()
+                            cur_states = copy(model.state_dict())
                             nova.load(e)
-                            _loaded[e] = model.state_dict()
+                            _loaded[e] = copy(model.state_dict())
                             model.load_state_dict(cur_states)
                         else:
                             _loaded[e] = torch.load(
@@ -111,9 +112,10 @@ def average_nbest_models(
 
                 # 2.b. Save the ave model and create a symlink
                 if nova:
-                    cur_states = model.state_dict()
+                    cur_states = copy(model.state_dict())
                     model.load_state_dict(avg)
-                    nova.save(op)
+                    ckptname = f"ave_{n}best_{suffix}"
+                    nova.save(ckptname)
                     model.load_state_dict(cur_states)
                 else:
                     torch.save(avg, op)
