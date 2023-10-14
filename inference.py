@@ -45,6 +45,10 @@ def load_audio(audio_path: str, extension: str = 'pcm') -> np.ndarray:
         return None
 
 def inference(path, model, **kwargs):
+    print("Start inference on", path)
+    
+    device = "cuda"
+    model = model.to(device)
     stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
 
     results = []
@@ -62,5 +66,6 @@ def single_infer(stt, path):
     text, token, token_int, hypothesis = stt(signal)[0]
     if stt.asr_model.token_normalize:
         text = grp2char(text)
+    print("\t".join([os.path.filename(path), text]))
     return text
     

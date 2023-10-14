@@ -4,6 +4,11 @@ from pathlib import Path
 from typing import Collection, Optional, Sequence, Union
 
 import torch
+try:
+    import nova
+else:
+    nova = None
+
 from typeguard import check_argument_types
 
 from espnet2.train.reporter import Reporter
@@ -16,6 +21,7 @@ def average_nbest_models(
     best_model_criterion: Sequence[Sequence[str]],
     nbest: Union[Collection[int], int],
     suffix: Optional[str] = None,
+    model = None,
 ) -> None:
     """Generate averaged model from n-best models
 
@@ -74,10 +80,16 @@ def average_nbest_models(
                 # 2.a. Averaging model
                 for e, _ in epoch_and_values[:n]:
                     if e not in _loaded:
-                        _loaded[e] = torch.load(
-                            output_dir / f"{e}epoch.pth",
-                            map_location="cpu",
-                        )
+                        if nova:
+                            cur_states = model.state_dict()
+                            nova.load(e)
+                            _loaded[e] = model.state_dict()
+                            model.load_state_dict(cur_states)
+                        else:
+                            _loaded[e] = torch.load(
+                                output_dir / f"{e}epoch.pth",
+                                map_location="cpu",
+                            )
                     states = _loaded[e]
 
                     if avg is None:
@@ -98,7 +110,13 @@ def average_nbest_models(
                         avg[k] = avg[k] / n
 
                 # 2.b. Save the ave model and create a symlink
-                torch.save(avg, op)
+                if nova:
+                    cur_states = model.state_dict()
+                    model.load_state_dict(avg)
+                    nova.save(op)
+                    model.load_state_dict(cur_states)
+                else:
+                    torch.save(avg, op)
 
         # 3. *.*.ave.pth is a symlink to the max ave model
         op = output_dir / f"{ph}.{cr}.ave_{max(_nbests)}best.{suffix}pth"

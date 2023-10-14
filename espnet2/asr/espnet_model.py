@@ -219,6 +219,7 @@ class ESPnetASRModel(AbsESPnetModel):
         self.pretrained_pt = pretrained_pt
         
         self.token_normalize = token_normalize
+        print("TOKEN NORMALIZE: ", token_normalize)
         self.token_type = token_type
         self.bpemodel = bpemodel
 

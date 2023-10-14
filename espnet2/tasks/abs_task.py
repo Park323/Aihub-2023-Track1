@@ -1158,7 +1158,7 @@ class AbsTask(ABC):
         torch.backends.cudnn.benchmark = args.cudnn_benchmark
         torch.backends.cudnn.deterministic = args.cudnn_deterministic
         if args.detect_anomaly:
-            logging.info("Invoking torch.autograd.set_detect_anomaly(True)")
+            print("Invoking torch.autograd.set_detect_anomaly(True)")
             torch.autograd.set_detect_anomaly(args.detect_anomaly)
 
         if (
@@ -1168,7 +1168,7 @@ class AbsTask(ABC):
         ):
             model = None
             schedulers = None
-            logging.info("Skipping model building in collect_stats stage.")
+            print("Skipping model building in collect_stats stage.")
         else:
             # 2. Build model
             if model:
@@ -1187,7 +1187,7 @@ class AbsTask(ABC):
             for t in args.freeze_param:
                 for k, p in model.named_parameters():
                     if k.startswith(t + ".") or k == t:
-                        logging.info(f"Setting {k}.requires_grad = False")
+                        print(f"Setting {k}.requires_grad = False")
                         p.requires_grad = False
 
             # 3. Build optimizer
@@ -1211,12 +1211,12 @@ class AbsTask(ABC):
 
                 schedulers.append(scheduler)
 
-            logging.info(pytorch_cudnn_version())
-            logging.info(model_summary(model))
+            print(pytorch_cudnn_version())
+            print(model_summary(model))
             for i, (o, s) in enumerate(zip(optimizers, schedulers), 1):
                 suf = "" if i == 1 else str(i)
-                logging.info(f"Optimizer{suf}:\n{o}")
-                logging.info(f"Scheduler{suf}: {s}")
+                print(f"Optimizer{suf}:\n{o}")
+                print(f"Scheduler{suf}: {s}")
 
         # 5. Dump "args" to config.yaml
         # NOTE(kamo): "args" should be saved after object-buildings are done
@@ -1225,7 +1225,7 @@ class AbsTask(ABC):
         if not distributed_option.distributed or distributed_option.dist_rank == 0:
             output_dir.mkdir(parents=True, exist_ok=True)
             with (output_dir / "config.yaml").open("w", encoding="utf-8") as f:
-                logging.info(
+                print(
                     f'Saving the configuration in {output_dir / "config.yaml"}'
                 )
                 yaml_no_alias_safe_dump(vars(args), f, indent=4, sort_keys=False)
@@ -1236,7 +1236,7 @@ class AbsTask(ABC):
             # Perform on collect_stats mode. This mode has two roles
             # - Derive the length and dimension of all input data
             # - Accumulate feats, square values, and the length for whitening
-            logging.info(args)
+            print(args)
 
             if args.valid_batch_size is None:
                 args.valid_batch_size = args.batch_size
@@ -1282,7 +1282,7 @@ class AbsTask(ABC):
         else:
             # 6. Loads pre-trained model
             for p in args.init_param:
-                logging.info(f"Loading pretrained params from {p}")
+                print(f"Loading pretrained params from {p}")
                 load_pretrained_model(
                     model=model,
                     init_param=p,
@@ -1318,7 +1318,7 @@ class AbsTask(ABC):
             )
             if not args.use_matplotlib and args.num_att_plot != 0:
                 args.num_att_plot = 0
-                logging.info("--use_matplotlib false => Changing --num_att_plot to 0")
+                print("--use_matplotlib false => Changing --num_att_plot to 0")
 
             if args.num_att_plot != 0:
                 plot_attention_iter_factory = cls.build_iter_factory(
@@ -1337,7 +1337,7 @@ class AbsTask(ABC):
                 try:
                     wandb.login()
                 except wandb.errors.UsageError:
-                    logging.info("wandb not configured! run `wandb login` to enable")
+                    print("wandb not configured! run `wandb login` to enable")
                     args.use_wandb = False
 
             if args.use_wandb:
@@ -1589,9 +1589,9 @@ class AbsTask(ABC):
 
         bs_list = [len(batch) for batch in batches]
 
-        logging.info(f"[{mode}] dataset:\n{dataset}")
-        logging.info(f"[{mode}] Batch sampler: {batch_sampler}")
-        logging.info(
+        print(f"[{mode}] dataset:\n{dataset}")
+        print(f"[{mode}] Batch sampler: {batch_sampler}")
+        print(
             f"[{mode}] mini-batch sizes summary: N-batch={len(bs_list)}, "
             f"mean={np.mean(bs_list):.1f}, min={np.min(bs_list)}, max={np.max(bs_list)}"
         )
@@ -1613,7 +1613,7 @@ class AbsTask(ABC):
                         )
                 
                 batches = [batch[rank::world_size] for batch in batches]
-                logging.info(f"Split each batch for the device distribution.")
+                print(f"Split each batch for the device distribution.")
                 
         return SequenceIterFactory(
             dataset=dataset,
@@ -1655,7 +1655,7 @@ class AbsTask(ABC):
         batches = list(batch_sampler)
         if iter_options.num_batches is not None:
             batches = batches[: iter_options.num_batches]
-        logging.info(f"[{mode}] dataset:\n{dataset}")
+        print(f"[{mode}] dataset:\n{dataset}")
 
         if iter_options.distributed:
             world_size = torch.distributed.get_world_size()

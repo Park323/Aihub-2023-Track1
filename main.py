@@ -45,7 +45,7 @@ def bind_model(model, optimizer=None):
 
     if nova:
         nova.bind(save=save, load=load, infer=infer)  # 'nova.bind' function must be called at the end.
-        logging.info("NOVA successfully binded the model")
+        print("NOVA successfully binded the model")
 
 
 if __name__ == '__main__':
@@ -100,10 +100,15 @@ if __name__ == '__main__':
     parser = ASRTask.get_parser()
     args = parser.parse_args(args=cmd.split())
     model = ASRTask.build_model(args=args)
+    print("BUILD MODEL COMPLETE")
     
     # AIHUB2023. Bind model
     bind_model(model=model)
+    print("MODEL BINDING COMPLETE")
 
+    if config.pause:
+        nova.paused(scope=locals())
+    
     if config.mode == "train":
         ASRTask.main(args, model=model)
         

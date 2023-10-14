@@ -157,11 +157,11 @@ class Trainer:
                 scheduler.load_state_dict(state)
         if scaler is not None:
             if states["scaler"] is None:
-                logging.warning("scaler state is not found")
+                print("scaler state is not found")
             else:
                 scaler.load_state_dict(states["scaler"])
 
-        logging.info(f"The training was resumed using {checkpoint}")
+        print(f"The training was resumed using {checkpoint}")
 
     @classmethod
     def run(
@@ -185,7 +185,7 @@ class Trainer:
             keep_nbest_models = [trainer_options.keep_nbest_models]
         else:
             if len(trainer_options.keep_nbest_models) == 0:
-                logging.warning("No keep_nbest_models is given. Change to [1]")
+                print("No keep_nbest_models is given. Change to [1]")
                 trainer_options.keep_nbest_models = [1]
             keep_nbest_models = trainer_options.keep_nbest_models
 
@@ -220,7 +220,7 @@ class Trainer:
 
         start_epoch = reporter.get_epoch() + 1
         if start_epoch == trainer_options.max_epoch + 1:
-            logging.warning(
+            print(
                 f"The training has already reached at max_epoch: {start_epoch}"
             )
 
@@ -274,7 +274,7 @@ class Trainer:
         start_time = time.perf_counter()
         for iepoch in range(start_epoch, trainer_options.max_epoch + 1):
             if iepoch != start_epoch:
-                logging.info(
+                print(
                     "{}/{}epoch started. Estimated time to finish: {}".format(
                         iepoch,
                         trainer_options.max_epoch,
@@ -286,7 +286,7 @@ class Trainer:
                     )
                 )
             else:
-                logging.info(f"{iepoch}/{trainer_options.max_epoch}epoch started")
+                print(f"{iepoch}/{trainer_options.max_epoch}epoch started")
             set_all_random_seed(trainer_options.seed + iepoch)
 
             reporter.set_epoch(iepoch)
@@ -340,7 +340,7 @@ class Trainer:
 
             if not distributed_option.distributed or distributed_option.dist_rank == 0:
                 # 3. Report the results
-                logging.info(reporter.log_message())
+                print(reporter.log_message())
                 if trainer_options.use_matplotlib:
                     reporter.matplotlib_plot(output_dir / "images")
                 if train_summary_writer is not None:
@@ -385,9 +385,9 @@ class Trainer:
                     nova.save(iepoch)
                 else:
                     torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
-                    logging.warning(f"{iepoch}th model has been saved with torch")
+                    print(f"{iepoch}th model has been saved with torch")
 
-                    logging.info("Debugging inference")
+                    print("Debugging inference")
                     from inference import inference
                     inference("data/sample/test", model)
                 
@@ -410,9 +410,9 @@ class Trainer:
                             p.symlink_to(f"{iepoch}epoch.pth")
                             _improved.append(f"{_phase}.{k}")
                 if len(_improved) == 0:
-                    logging.info("There are no improvements in this epoch")
+                    print("There are no improvements in this epoch")
                 else:
-                    logging.info(
+                    print(
                         "The best model has been updated: " + ", ".join(_improved)
                     )
 
@@ -423,7 +423,7 @@ class Trainer:
                 if log_model and trainer_options.use_wandb:
                     import wandb
 
-                    logging.info("Logging Model on this epoch :::::")
+                    print("Logging Model on this epoch :::::")
                     artifact = wandb.Artifact(
                         name=f"model_{wandb.run.id}",
                         type="model",
@@ -436,41 +436,45 @@ class Trainer:
                     ]
                     wandb.log_artifact(artifact, aliases=aliases)
 
-                # # 6. Remove the model files excluding n-best epoch and latest epoch
-                # _removed = []
-                # # Get the union set of the n-best among multiple criterion
-                # nbests = set().union(
-                #     *[
-                #         set(reporter.sort_epochs(ph, k, m)[: max(keep_nbest_models)])
-                #         for ph, k, m in trainer_options.best_model_criterion
-                #         if reporter.has(ph, k)
-                #     ]
-                # )
+                # 6. Remove the model files excluding n-best epoch and latest epoch
+                _removed = []
+                # Get the union set of the n-best among multiple criterion
+                nbests = set().union(
+                    *[
+                        set(reporter.sort_epochs(ph, k, m)[: max(keep_nbest_models)])
+                        for ph, k, m in trainer_options.best_model_criterion
+                        if reporter.has(ph, k)
+                    ]
+                )
 
-                # # Generated n-best averaged model
-                # if (
-                #     trainer_options.nbest_averaging_interval > 0
-                #     and iepoch % trainer_options.nbest_averaging_interval == 0
-                # ):
-                #     average_nbest_models(
-                #         reporter=reporter,
-                #         output_dir=output_dir,
-                #         best_model_criterion=trainer_options.best_model_criterion,
-                #         nbest=keep_nbest_models,
-                #         suffix=f"till{iepoch}epoch",
-                #     )
+                # Generated n-best averaged model
+                if (
+                    trainer_options.nbest_averaging_interval > 0
+                    and iepoch % trainer_options.nbest_averaging_interval == 0
+                ):
+                    average_nbest_models(
+                        reporter=reporter,
+                        output_dir=output_dir,
+                        best_model_criterion=trainer_options.best_model_criterion,
+                        nbest=keep_nbest_models,
+                        suffix=f"till{iepoch}epoch",
+                        model=model,
+                    )
 
-                # for e in range(1, iepoch):
-                #     p = output_dir / f"{e}epoch.pth"
-                #     if p.exists() and e not in nbests:
-                #         p.unlink()
-                #         _removed.append(str(p))
-                # if len(_removed) != 0:
-                #     logging.info("The model files were removed: " + ", ".join(_removed))
+                for e in range(1, iepoch):
+                    pass
+                    # Remove file
+                    # p = output_dir / f"{e}epoch.pth"
+                    # if p.exists() and e not in nbests:
+                    #     p.unlink()
+                    #     _removed.append(str(p))
+                if len(_removed) != 0:
+                    print("The model states were removed: " + ", ".join(_removed))
+                    # print("The model files were removed: " + ", ".join(_removed))
 
             # 7. If any updating haven't happened, stops the training
             if all_steps_are_invalid:
-                logging.warning(
+                print(
                     "The gradients at all steps are invalid in this epoch. "
                     f"Something seems wrong. This training was stopped at {iepoch}epoch"
                 )
@@ -484,7 +488,7 @@ class Trainer:
                     break
 
         else:
-            logging.info(
+            print(
                 f"The training was finished at {trainer_options.max_epoch} epochs "
             )
 
@@ -496,6 +500,7 @@ class Trainer:
                     output_dir=output_dir,
                     best_model_criterion=trainer_options.best_model_criterion,
                     nbest=keep_nbest_models,
+                    model=model,
                 )
             except:
                 print("Averaging Failed")
@@ -570,7 +575,7 @@ class Trainer:
                         try:
                             _args = kwargs2args(_model.forward, batch)
                         except (ValueError, TypeError):
-                            logging.warning(
+                            print(
                                 "inpect.signature() is failed for the model. "
                                 "The graph can't be added for tensorboard."
                             )
@@ -580,14 +585,14 @@ class Trainer:
                                     _model, _args, use_strict_trace=False
                                 )
                             except Exception:
-                                logging.warning(
+                                print(
                                     "summary_writer.add_graph() "
                                     "is failed for the model. "
                                     "The graph can't be added for tensorboard."
                                 )
                             del _args
                     else:
-                        logging.warning(
+                        print(
                             "model.module is not found (This should be a bug.)"
                         )
                 del _model
@@ -701,7 +706,7 @@ class Trainer:
                     grad_norm = torch.tensor(grad_norm)
 
                 if not torch.isfinite(grad_norm):
-                    logging.warning(
+                    print(
                         f"The grad norm is {grad_norm}. Skipping updating the model."
                     )
 
@@ -759,7 +764,7 @@ class Trainer:
             # NOTE(kamo): Call log_message() after next()
             reporter.next()
             if iiter % log_interval == 0:
-                logging.info(reporter.log_message(-log_interval))
+                print(reporter.log_message(-log_interval))
                 if summary_writer is not None:
                     reporter.tensorboard_add_scalar(summary_writer, -log_interval)
                 if use_wandb:
