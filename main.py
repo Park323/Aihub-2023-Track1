@@ -1,7 +1,4 @@
 import os
-import sys
-os.chdir("egs2/aihub2023/asr1")
-import logging
 import warnings
 import argparse
 import subprocess
@@ -17,11 +14,6 @@ try:
 except:
     nova = None
     DATASET_PATH = "data/sample"
-
-print("DATASET_PATH :", DATASET_PATH)
-
-with open("db.sh", "w") as f:
-    f.write(f"AIHUB2023={DATASET_PATH}\n")
 
 
 def bind_model(model, optimizer=None):
@@ -65,6 +57,13 @@ if __name__ == '__main__':
 
     config = args.parse_args()
     warnings.filterwarnings('ignore')
+    
+    os.chdir("egs2/aihub2023/asr1")
+
+    print("DATASET_PATH :", DATASET_PATH)
+
+    with open("db.sh", "w") as f:
+        f.write(f"AIHUB2023={DATASET_PATH}\n")
 
     # Parse args
     if config.token_type == "bpe":
@@ -116,4 +115,7 @@ if __name__ == '__main__':
     
         if nova:
             nova.paused(scope=locals())
+            
+    # if config.mode == "test":
+    #     inference("data/sample/test", model)
     

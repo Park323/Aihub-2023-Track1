@@ -45,23 +45,64 @@ def load_audio(audio_path: str, extension: str = 'pcm') -> np.ndarray:
         print('IOError in {0}'.format(audio_path))
         return None
 
-def inference(path, model, **kwargs):
-    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
+# def inference(path, model, **kwargs):
+#     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
     
+#     device = "cuda"
+#     model = model.to(device)
+#     stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
+
+#     results = []
+#     for i in glob(os.path.join(path, '*')):
+#         results.append(
+#             {
+#                 'filename': i.split('/')[-1],
+#                 'text': single_infer(stt, i)
+#             }
+#         )
+#     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
+#     return sorted(results, key=lambda x: x['filename'])
+
+def inference_subprocess(job_id:int, paths, model, return_list):
     device = "cuda"
     model = model.to(device)
     stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
 
+    for i in paths:
+        return_list[i.split('/')[-1]] = single_infer(stt, i)
+
+def inference(path, model, **kwargs):
+    """Inference Multiprocessing"""
+    import torch.multiprocessing as mp
+    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
+    
+    torch.multiprocessing.set_start_method("spawn")
+
+    inference_nj = 8
+    test_paths = glob(os.path.join(path, '*'))
+    
+    manager = mp.Manager()
+    return_dict = manager.dict()
+    jobs = []
+    for i in range(inference_nj):
+        p = mp.Process(
+            target=inference_subprocess, 
+            args=(i, test_paths[i::inference_nj], model, return_dict))
+        jobs.append(p)
+        p.start()
+
+    for proc in jobs:
+        proc.join()
+    
     results = []
-    for i in glob(os.path.join(path, '*')):
-        results.append(
-            {
-                'filename': i.split('/')[-1],
-                'text': single_infer(stt, i)
-            }
-        )
+    for key, value in return_dict.items():
+        results.append({
+            'filename': key,
+            'text': value})
+
     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
     return sorted(results, key=lambda x: x['filename'])
+
 
 def single_infer(stt, path):
     signal = load_audio(path)
