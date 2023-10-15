@@ -97,5 +97,9 @@ def grp2char(sentence):
             char_sentence += grp
             chr_id = BASE_CODE
             chr_step = 0
+    
+    # Check unfinished char (Choseong + Jungseong)
+    if chr_step == 2:
+        char_sentence += chr(chr_id)
             
     return char_sentence
