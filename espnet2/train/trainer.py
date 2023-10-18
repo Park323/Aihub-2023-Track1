@@ -387,9 +387,9 @@ class Trainer:
                     torch.save(model.state_dict(), output_dir / f"{iepoch}epoch.pth")
                     print(f"{iepoch}th model has been saved with torch")
 
-                    print("Debugging inference")
-                    from inference import inference
-                    inference("data/sample/test", model)
+                    # print("Debugging inference")
+                    # from inference import inference
+                    # inference("data/sample/test", model)
                 
                 # Creates a sym link latest.pth -> {iepoch}epoch.pth
                 p = output_dir / "latest.pth"
