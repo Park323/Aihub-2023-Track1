@@ -457,7 +457,7 @@ class Trainer:
                         output_dir=output_dir,
                         best_model_criterion=trainer_options.best_model_criterion,
                         nbest=keep_nbest_models,
-                        suffix=f"till{iepoch}epoch",
+                        suffix=f"till{iepoch}",
                         model=model,
                     )
 

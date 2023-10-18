@@ -45,49 +45,58 @@ def load_audio(audio_path: str, extension: str = 'pcm') -> np.ndarray:
         print('IOError in {0}'.format(audio_path))
         return None
 
-# def inference(path, model, **kwargs):
-#     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
+def _inference(path, model, **kwargs):
+    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
     
-#     device = "cuda"
-#     model = model.to(device)
-#     stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
-
-#     results = []
-#     for i in glob(os.path.join(path, '*')):
-#         results.append(
-#             {
-#                 'filename': i.split('/')[-1],
-#                 'text': single_infer(stt, i)
-#             }
-#         )
-#     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
-#     return sorted(results, key=lambda x: x['filename'])
-
-def inference_subprocess(job_id:int, paths, model, return_list):
     device = "cuda"
     model = model.to(device)
     stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
 
-    for i in paths:
-        return_list[i.split('/')[-1]] = single_infer(stt, i)
+    results = []
+    for i in glob(os.path.join(path, '*')):
+        results.append(
+            {
+                'filename': i.split('/')[-1],
+                'text': single_infer(stt, i)
+            }
+        )
+    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
+    return sorted(results, key=lambda x: x['filename'])
 
-def inference(path, model, **kwargs):
+def inference_subprocess(gpu_id:int, job_id:int, paths, model, return_list, debug=False):
+    if debug:
+        print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), job_id, "started on pid:", os.getpid())
+    device = f"cuda:{gpu_id}"
+    model = model.to(device)
+    stt = Speech2Text(
+        asr_model=model, device=device,
+        ctc_weight=0.0, beam_size=3) ################# Debug config ###############
+
+    for i in paths:
+        return_list[i.split('/')[-1]] = single_infer(stt, i, debug=debug)
+
+def inference(path, model, debug=False, **kwargs):
     """Inference Multiprocessing"""
     import torch.multiprocessing as mp
-    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
+    print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "Start inference", path)
     
     torch.multiprocessing.set_start_method("spawn")
 
-    inference_nj = 8
+    n_gpu = torch.cuda.device_count()            ################# Debug environ. ###############
+    inference_nj = n_gpu * 8
     test_paths = glob(os.path.join(path, '*'))
+    if debug:
+        test_paths = sorted(test_paths)[:5000]
+        print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), f"{len(test_paths)} of Inference data collected by {inference_nj} jobs with {n_gpu}", path)
     
     manager = mp.Manager()
     return_dict = manager.dict()
     jobs = []
     for i in range(inference_nj):
+        gpu_id = int(i // (inference_nj / n_gpu))
         p = mp.Process(
             target=inference_subprocess, 
-            args=(i, test_paths[i::inference_nj], model, return_dict))
+            args=(gpu_id, i, test_paths[i::inference_nj], model, return_dict, debug))
         jobs.append(p)
         p.start()
 
@@ -100,15 +109,15 @@ def inference(path, model, **kwargs):
             'filename': key,
             'text': value})
 
-    print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
+    print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "Inference finished")
     return sorted(results, key=lambda x: x['filename'])
 
 
-def single_infer(stt, path):
+def single_infer(stt, path, debug=False):
     signal = load_audio(path)
     text, token, token_int, hypothesis = stt(signal)[0]
     if stt.asr_model.token_normalize:
         text = grp2char(text)
-    print("\t".join([os.path.basename(path), text]))
+    if debug:
+        print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "\t".join([os.path.basename(path), text]))
     return text
-    

@@ -59,6 +59,7 @@ from espnet2.asr.frontend.windowing import SlidingWindow
 from espnet2.asr.maskctc_model import MaskCTCModel
 from espnet2.asr.postencoder.abs_postencoder import AbsPostEncoder
 from espnet2.asr.postencoder.mlp import SimpleMLP
+from espnet2.asr.postencoder.linear import SimpleLinear
 from espnet2.asr.postencoder.hugging_face_transformers_postencoder import (
     HuggingFaceTransformersPostEncoder,
 )
@@ -168,6 +169,7 @@ postencoder_choices = ClassChoices(
     name="postencoder",
     classes=dict(
         hugging_face_transformers=HuggingFaceTransformersPostEncoder,
+        linear=SimpleLinear,
         mlp=SimpleMLP,
     ),
     type_check=AbsPostEncoder,
@@ -653,7 +655,7 @@ class ASRTask(AbsTask):
             initialize(model, args.init)
 
         # 9. DDP Synchronize the model
-        if args.ngpu > 1 and args.get("sync_batchnorm", False):
+        if args.ngpu > 1 and args.sync_batchnorm:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         elif args.ngpu > 1:
             logging.warning("BatchNorm modules are not synchronized among the GPU devices")

@@ -217,7 +217,7 @@ class ESPnetASRModel(AbsESPnetModel):
             self.lang_token_id = None
         
         self.pretrained_pt = pretrained_pt
-        
+
         self.token_normalize = token_normalize
         print("TOKEN NORMALIZE: ", token_normalize)
         self.token_type = token_type
@@ -400,7 +400,8 @@ class ESPnetASRModel(AbsESPnetModel):
             for step in self.extract_order:
                 if step=="front":
                     # 1. Pass Frontend
-                    speech, speech_lengths = self.frontend(speech, speech_lengths)
+                    if self.extract_order.index("front") > self.extract_order.index("norm"):
+                        speech, speech_lengths = self.frontend(speech, speech_lengths)
                 elif step=="aug":
                     # 2. Data augmentation
                     if self.specaug is not None and self.training:
@@ -462,8 +463,6 @@ class ESPnetASRModel(AbsESPnetModel):
         speech = speech[:, : speech_lengths.max()]
 
         if self.extract_order.index("front") < self.extract_order.index("norm"):
-            logging.info(f"{self.extract_order}")
-            logging.info("Should not be here!")
             feats, feats_lengths = self.frontend(speech, speech_lengths)
         else:
             # No frontend and no feature extract

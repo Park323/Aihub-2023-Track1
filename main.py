@@ -61,6 +61,9 @@ if __name__ == '__main__':
     os.chdir("egs2/aihub2023/asr1")
 
     print("DATASET_PATH :", DATASET_PATH)
+    
+    print("CPU_number :", os.cpu_count())
+    print("GPU_number :", torch.cuda.device_count())
 
     with open("db.sh", "w") as f:
         f.write(f"AIHUB2023={DATASET_PATH}\n")
@@ -109,13 +112,16 @@ if __name__ == '__main__':
         nova.paused(scope=locals())
     
     if config.mode == "train":
+        model = torch.nn.DataParallel(model)
         ASRTask.main(args, model=model)
         
         print("Train Finished")
     
-        if nova:
-            nova.paused(scope=locals())
-            
-    # if config.mode == "test":
-    #     inference("data/sample/test", model)
+    if config.mode == "save_debug":
+        nova.save('debug')
+        print("Debugging Saving Finished")
     
+    if config.mode == "test_debug":
+        ckpt = torch.load("exp/models/215_ave_.pt")
+        model.load_state_dict(ckpt["model"])
+        inference("/data/Tr1Ko/train/train_data", model, debug=True)

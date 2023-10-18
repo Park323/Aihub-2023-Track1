@@ -43,7 +43,8 @@ def average_nbest_models(
         warnings.warn("At least 1 nbest values are required")
         nbests = [1]
     if suffix is not None:
-        suffix = suffix + "."
+        # suffix = suffix + "."
+        pass
     else:
         suffix = ""
 
@@ -114,7 +115,7 @@ def average_nbest_models(
                 if nova:
                     cur_states = copy(model.state_dict())
                     model.load_state_dict(avg)
-                    ckptname = f"ave_{n}best_{suffix}"
+                    ckptname = f"ave_{suffix}"
                     nova.save(ckptname)
                     model.load_state_dict(cur_states)
                 else:
