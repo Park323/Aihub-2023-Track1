@@ -306,14 +306,15 @@ class SqueezeformerEncoder(AbsEncoder):
         self.n_first_blocks = num_blocks // 2 - 1
         self.n_mid_blocks = num_blocks // 2
         
-        self.u_downsample = torch.nn.Conv2d(
+        self.u_downsample = torch.nn.Conv1d(
             output_size,
             output_size,
             kernel_size=3,
             stride=2,
             padding=1
         )
-        self.u_upsample = torch.nn.Upsample(2, mode="linear")
+        self.u_upsample = torch.nn.Upsample(scale_factor=2, mode="linear")
+        self.half_pos_embed = pos_enc_class(output_size, positional_dropout_rate, max_pos_emb_len)
 
     def output_size(self) -> int:
         return self._output_size
@@ -361,23 +362,29 @@ class SqueezeformerEncoder(AbsEncoder):
 
         intermediate_outs = []
         
-        import pdb;pdb.set_trace()
         if len(self.interctc_layer_idx) == 0:
             # First stage
             xs_pad, masks = self.encoders[:self.n_first_blocks](xs_pad, masks)
-            residual = xs_pad
+            xs_pad, pos_emb = xs_pad
             # Downsample
-            xs_pad = self.u_downsample(xs_pad)
-            masks # NOTE(JK) Needed
+            residual = xs_pad
+            res_mask = masks
+            xs_pad = self.u_downsample(xs_pad.permute(0,2,1)) # (B,T,D) -> (B,D,T)
+            xs_pad = xs_pad.permute(0,2,1) # (B,T,D)
+            masks  = masks[:,:,::2]
+            # Create pos embed
+            xs_pad = self.half_pos_embed(xs_pad)
             # Second stage
             xs_pad, masks = self.encoders[self.n_first_blocks:self.n_first_blocks+self.n_mid_blocks](xs_pad, masks)
-            # Downsample
-            xs_pad = self.u_upsample(xs_pad)
-            masks # NOTE(JK) Needed
+            # Upsample
+            xs_pad, _ = xs_pad
+            xs_pad = self.u_upsample(xs_pad.permute(0,2,1))
+            xs_pad = xs_pad.permute(0,2,1)
             # Skip connection
-            xs_pad = residual + xs_pad
+            xs_pad = residual + xs_pad[:,:residual.shape[1]]
+            masks  = res_mask
             # Last stage
-            xs_pad, masks = self.encoders[-1](xs_pad, masks)
+            xs_pad, masks = self.encoders[-1]((xs_pad, pos_emb), masks)
         else:
             raise NotImplementedError
             for layer_idx, encoder_layer in enumerate(self.encoders):

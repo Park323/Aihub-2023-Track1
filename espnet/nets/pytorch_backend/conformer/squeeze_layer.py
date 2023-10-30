@@ -60,6 +60,7 @@ class EncoderLayer(nn.Module):
         self.conv_module = conv_module
         self.norm_ff = LayerNorm(size)  # for the FNN module
         self.norm_mha = LayerNorm(size)  # for the MHA module
+        self.norm_ff_macaron = LayerNorm(size)
         self.ff_scale = 1.0
         if self.conv_module is not None:
             self.norm_conv = LayerNorm(size)  # for the CNN module
