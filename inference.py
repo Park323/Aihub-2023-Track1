@@ -66,14 +66,26 @@ def _inference(path, model, **kwargs):
 def inference_subprocess(gpu_id:int, job_id:int, paths, model, return_list, debug=False):
     if debug:
         print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), job_id, "started on pid:", os.getpid())
-    device = f"cuda:{gpu_id}"
+    # device = f"cuda:{gpu_id}"
+    device = f"cuda"
     model = model.to(device)
+    
+    # lm_file="exp/lm/4.0_9epoch_best.pth"
+    # lm_train_config="exp/lm/4.0_9epoch_best.yaml"
+    # lm_weight=0.1
+    
+    lm_file=None
+    lm_train_config=None
+    lm_weight=0.0
+    
     stt = Speech2Text(
         asr_model=model, device=device,
-        ctc_weight=0.0, beam_size=3) ################# Debug config ###############
+        lm_file=lm_file, lm_train_config=lm_train_config, lm_weight=lm_weight,
+        ctc_weight=0.0, beam_size=1) ################# Debug config ###############
 
     for i in paths:
-        return_list[i.split('/')[-1]] = single_infer(stt, i, debug=debug)
+        with torch.autocast(device_type=device):
+            return_list[i.split('/')[-1]] = single_infer(stt, i, debug=debug)
 
 def inference(path, model, debug=False, **kwargs):
     """Inference Multiprocessing"""
@@ -83,7 +95,8 @@ def inference(path, model, debug=False, **kwargs):
     torch.multiprocessing.set_start_method("spawn")
 
     n_gpu = torch.cuda.device_count()            ################# Debug environ. ###############
-    inference_nj = n_gpu * 8
+    # inference_nj = n_gpu * 8
+    inference_nj = 4
     test_paths = glob(os.path.join(path, '*'))
     if debug:
         test_paths = sorted(test_paths)[:5000]

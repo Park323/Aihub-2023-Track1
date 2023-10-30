@@ -112,9 +112,14 @@ if __name__ == '__main__':
         nova.paused(scope=locals())
     
     if config.mode == "train":
-        model = torch.nn.DataParallel(model)
         ASRTask.main(args, model=model)
-        
+        # ckpt = torch.load("exp/models/276_ave_till60.pt")
+        # ckpt = torch.load("exp/models/park32323_Tr1Ko_276/ave_till60/model/model.pt")
+        # ckpt = torch.load("exp/park32323_Tr1Ko_276/ave_/model/model.pt")
+        # model.load_state_dict(ckpt["model"])
+        # nova.save("ckpt")
+        # import time
+        # time.sleep(30)
         print("Train Finished")
     
     if config.mode == "save_debug":
@@ -122,6 +127,10 @@ if __name__ == '__main__':
         print("Debugging Saving Finished")
     
     if config.mode == "test_debug":
-        ckpt = torch.load("exp/models/215_ave_.pt")
+        ckpt = torch.load("exp/models/257_26.pt")
         model.load_state_dict(ckpt["model"])
         inference("/data/Tr1Ko/train/train_data", model, debug=True)
+    
+    # ckpt = torch.load("exp/models/257_ave_.pt")
+    # model.load_state_dict(ckpt["model"])
+    # nova.save("ckpt")

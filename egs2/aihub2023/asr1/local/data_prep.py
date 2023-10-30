@@ -25,6 +25,7 @@ class Utils:
     def refine_text(text: str) -> str:
         text_val = text.strip()
         text_val = re.sub('[^가-힣\s]','',text_val)
+        # text_val = re.sub('\s','',text_val) # Remove space
         return text_val
 
     @staticmethod

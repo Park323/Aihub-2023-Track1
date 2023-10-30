@@ -1335,7 +1335,7 @@ class AbsTask(ABC):
                     raise RuntimeError("Please install wandb")
 
                 try:
-                    wandb.login()
+                    wandb.login(key="9aadb62bc7ee8c4c86ff96a3a868c25f52411299")
                 except wandb.errors.UsageError:
                     print("wandb not configured! run `wandb login` to enable")
                     args.use_wandb = False
