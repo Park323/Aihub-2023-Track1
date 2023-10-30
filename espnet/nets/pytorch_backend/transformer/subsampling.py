@@ -111,13 +111,13 @@ class Conv2dSubsampling(torch.nn.Module):
 
     """
 
-    def __init__(self, idim, odim, dropout_rate, pos_enc=None):
+    def __init__(self, idim, odim, dropout_rate, pos_enc=None, depthwise=False):
         """Construct an Conv2dSubsampling object."""
         super(Conv2dSubsampling, self).__init__()
         self.conv = torch.nn.Sequential(
             torch.nn.Conv2d(1, odim, 3, 2),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(odim, odim, 3, 2),
+            torch.nn.Conv2d(odim, odim, 3, 2, groups=odim if depthwise else None),
             torch.nn.ReLU(),
         )
         self.out = torch.nn.Sequential(
