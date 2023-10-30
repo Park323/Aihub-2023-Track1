@@ -21,7 +21,7 @@ keep_nbest_models: 10
 nbest_averaging_interval: 30
 
 dry_run: false
-use_amp: true
+use_amp: false
 cudnn_deterministic: true
 cudnn_benchmark: true
 
@@ -54,7 +54,7 @@ scheduler_conf:
 # Log
 use_wandb: True
 wandb_project: KoreanAI2023
-wandb_name: "[debug] cm_1.0"
+wandb_name: cm_batch_0.0
 
 # Noise dynamics
 # noise_scp: data/noise.scp
@@ -161,7 +161,7 @@ decoder: transformer
 decoder_conf:
     attention_heads: 4
     linear_units: 2048
-    num_blocks: 3
+    num_blocks: 2
     dropout_rate: 0.1
     positional_dropout_rate: 0.1
     self_attention_dropout_rate: 0.1

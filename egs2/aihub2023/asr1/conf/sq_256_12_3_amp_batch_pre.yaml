@@ -52,9 +52,9 @@ scheduler_conf:
 # ==============
 
 # Log
-use_wandb: True
+use_wandb: False
 wandb_project: KoreanAI2023
-wandb_name: "[debug] cm_1.0"
+wandb_name: "[debug] squeeze_1.0"
 
 # Noise dynamics
 # noise_scp: data/noise.scp
@@ -132,7 +132,7 @@ normalize_conf:
 preencoder:
 preencoder_conf:
 
-encoder: conformer
+encoder: squeezeformer
 encoder_conf:
     output_size: 256
     attention_heads: 4
@@ -141,8 +141,8 @@ encoder_conf:
     dropout_rate: 0.1
     positional_dropout_rate: 0.1
     attention_dropout_rate: 0.1
-    input_layer: conv2d
-    normalize_before: true
+    input_layer: dwconv2d
+    normalize_before: false
     macaron_style: true
     rel_pos_type: latest
     pos_enc_layer_type: rel_pos

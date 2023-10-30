@@ -4,10 +4,8 @@ num_att_plot: 0
 num_workers: 8
 sort_in_batch: descending       # how to sort data in making batch
 sort_batch: descending          # how to sort created batches
-batch_type: sorted
-batch_size: 32
-# batch_type: length
-# batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
+batch_type: length
+batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
 # max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
 accum_grad: 4
 max_epoch: 15
@@ -21,7 +19,7 @@ keep_nbest_models: 10
 nbest_averaging_interval: 30
 
 dry_run: false
-use_amp: true
+use_amp: false
 cudnn_deterministic: true
 cudnn_benchmark: true
 
@@ -54,7 +52,7 @@ scheduler_conf:
 # Log
 use_wandb: True
 wandb_project: KoreanAI2023
-wandb_name: "[debug] cm_1.0"
+wandb_name: cm_0.0
 
 # Noise dynamics
 # noise_scp: data/noise.scp
@@ -161,7 +159,7 @@ decoder: transformer
 decoder_conf:
     attention_heads: 4
     linear_units: 2048
-    num_blocks: 3
+    num_blocks: 2
     dropout_rate: 0.1
     positional_dropout_rate: 0.1
     self_attention_dropout_rate: 0.1
