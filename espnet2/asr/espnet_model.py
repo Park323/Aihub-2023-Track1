@@ -46,7 +46,7 @@ class ESPnetASRModel(AbsESPnetModel):
         normalize: Optional[AbsNormalize],
         preencoder: Optional[AbsPreEncoder],
         encoder: AbsEncoder,
-        postencoder: Optional[AbsPostEncoder],
+        postencoder: Optional[Union[AbsEncoder, AbsPostEncoder]],
         decoder: Optional[AbsDecoder],
         ctc: CTC,
         joint_network: Optional[torch.nn.Module],
@@ -433,10 +433,14 @@ class ESPnetASRModel(AbsESPnetModel):
 
         # Post-encoder, e.g. NLU
         if self.postencoder is not None:
-            encoder_out, encoder_out_lens = self.postencoder(
-                encoder_out, encoder_out_lens
-            )
-
+            if isinstance(self.postencoder, AbsEncoder):
+                encoder_out, encoder_out_lens, _ = self.postencoder(
+                    encoder_out, encoder_out_lens
+                )
+            else:
+                encoder_out, encoder_out_lens = self.postencoder(
+                    encoder_out, encoder_out_lens
+                )
         assert encoder_out.size(0) == speech.size(0), (
             encoder_out.size(),
             speech.size(0),

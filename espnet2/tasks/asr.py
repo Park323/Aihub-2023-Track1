@@ -177,8 +177,9 @@ postencoder_choices = ClassChoices(
         hugging_face_transformers=HuggingFaceTransformersPostEncoder,
         linear=SimpleLinear,
         mlp=SimpleMLP,
+        conformer=ConformerEncoder,
     ),
-    type_check=AbsPostEncoder,
+    # type_check=AbsPostEncoder,
     default=None,
     optional=True,
 )
