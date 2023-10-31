@@ -28,6 +28,7 @@ from espnet2.asr.encoder.branchformer_encoder import BranchformerEncoder
 from espnet2.asr.encoder.conformer_encoder import ConformerEncoder
 from espnet2.asr.encoder.squeezeformer_encoder import SqueezeformerEncoder
 from espnet2.asr.encoder.huggingface_hubert_encoder import HuggingfaceHuBertEncoder
+from espnet2.asr.encoder.huggingface_whisper_encoder import HuggingfaceWhisperEncoder
 from espnet2.asr.encoder.contextual_block_conformer_encoder import (
     ContextualBlockConformerEncoder,
 )
@@ -164,6 +165,7 @@ encoder_choices = ClassChoices(
         longformer=LongformerEncoder,
         branchformer=BranchformerEncoder,
         whisper=OpenAIWhisperEncoder,
+        whisper_hugging=HuggingfaceWhisperEncoder,
         e_branchformer=EBranchformerEncoder,
     ),
     type_check=AbsEncoder,

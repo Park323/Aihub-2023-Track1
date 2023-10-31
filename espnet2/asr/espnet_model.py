@@ -204,7 +204,8 @@ class ESPnetASRModel(AbsESPnetModel):
         self.extract_feats_in_collect_stats = extract_feats_in_collect_stats
         self.extract_order = extract_order
 
-        self.is_encoder_whisper = "Whisper" in type(self.encoder).__name__
+        # self.is_encoder_whisper = "Whisper" in type(self.encoder).__name__
+        self.is_encoder_whisper = False
 
         if self.is_encoder_whisper:
             assert (
