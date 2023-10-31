@@ -55,9 +55,9 @@ wandb_project: KoreanAI2023
 wandb_name: cm_0.0
 
 # Noise dynamics
-# noise_scp: data/noise.scp
-# noise_apply_prob: 1.0
-# noise_db_range: '-5_0_5_10_15_20_9999'
+noise_scp: data/noise.scp
+noise_apply_prob: 1.0
+noise_db_range: '-5_0_5_10_15_20_9999'
 
 # Data
 preprocessor: default

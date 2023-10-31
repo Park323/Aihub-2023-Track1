@@ -5,10 +5,10 @@ num_workers: 8
 sort_in_batch: descending       # how to sort data in making batch
 sort_batch: descending          # how to sort created batches
 batch_type: length
-batch_bins: 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
-# max_utt_len: 64000 # 64,000 / 96,000 / 192,000 / 384,000
+batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
+# max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
 accum_grad: 4
-max_epoch: 20
+max_epoch: 100
 patience: none
 init: default
 best_model_criterion:
@@ -16,37 +16,48 @@ best_model_criterion:
     - acc
     - max
 keep_nbest_models: 10
-nbest_averaging_interval: 10
+nbest_averaging_interval: 30
 
 dry_run: false
-use_amp: false
+use_amp: true
 cudnn_deterministic: true
 cudnn_benchmark: true
 
+# optim: adamw
+# optim_conf:
+#     lr: 0.001
+#     betas: [0.9, 0.98]
+#     eps: 0.00000001
+#     weight_decay: 0.03
+# scheduler: cosinewarmup
+# scheduler_conf:
+#     warmup_epochs: 2
+#     num_epochs: 20
+
 optim: adamw
 optim_conf:
-    lr: 0.001
     betas: [0.9, 0.98]
     eps: 0.00000001
-    weight_decay: 0.03
+    lr: 0.001
+    weight_decay: 0.000001
 scheduler: cosinewarmup
 scheduler_conf:
-    warmup_epochs: 2
-    num_epochs: 20
+    warmup_epochs: 5
+    num_epochs: 100
 
 # ==============
 # Train Setup
 # ==============
 
 # Log
-use_wandb: False
+use_wandb: True
 wandb_project: KoreanAI2023
-wandb_name: debug_0.0
+wandb_name: cm_1.0
 
 # Noise dynamics
-# noise_scp: data/noise.scp
-# noise_apply_prob: 1.0
-# noise_db_range: '-5_0_5_10_15_20_9999'
+noise_scp: data/noise.scp
+noise_apply_prob: 1.0
+noise_db_range: '-5_0_5_10_15_20_9999'
 
 # Data
 preprocessor: default
@@ -66,15 +77,15 @@ preprocessor_conf:
 # Model Configuration
 model: espnet
 model_conf:
-    token_normalize: False
+    token_normalize: True
     report_cer: True
     report_wer: False
     ctc_weight: 0.1
     lsm_weight: 0.1
     length_normalized_loss: false
     extract_feats_in_collect_stats: false
-    extract_order: ["aug", "norm", "front"]
-sync_batchnorm: true
+    extract_order: ["front", "aug", "norm"]
+sync_batchnorm: false
 
 # FrontEnds
 # frontend: resnet
@@ -93,15 +104,21 @@ frontend_conf:
     n_mels: 80
     
 # Augmentation
-# specaug: timeaug
-# specaug_conf:
-#     samplerate: 16000
-#     apply_bandrej: false
-#     bandwidth_range: [0.00001, 150]
-#     num_bandrej: 2
-#     apply_tdrop: false
-#     time_mask_width_range: [0, 640] # 0.4 seconds
-#     num_time_mask: 2
+specaug: specaug
+specaug_conf:
+    apply_time_warp: true
+    time_warp_window: 5
+    time_warp_mode: bicubic
+    apply_freq_mask: true
+    freq_mask_width_range:
+    - 0
+    - 30
+    num_freq_mask: 2
+    apply_time_mask: true
+    time_mask_width_range:
+    - 0
+    - 40
+    num_time_mask: 2
 
 # Normalization
 normalize: utterance_mvn
@@ -116,9 +133,9 @@ preencoder_conf:
 encoder: conformer
 encoder_conf:
     output_size: 256
-    attention_heads: 8
+    attention_heads: 4
     linear_units: 2048
-    num_blocks: 6
+    num_blocks: 12
     dropout_rate: 0.1
     positional_dropout_rate: 0.1
     attention_dropout_rate: 0.1
@@ -133,12 +150,14 @@ encoder_conf:
     cnn_module_kernel: 31
 
 # Post-encoding
-postencoder: null
+# postencoder: linear
+# postencoder_conf:
+#     output_size: 640
 
 # Decoding
 decoder: transformer
 decoder_conf:
-    attention_heads: 8
+    attention_heads: 4
     linear_units: 2048
     num_blocks: 3
     dropout_rate: 0.1

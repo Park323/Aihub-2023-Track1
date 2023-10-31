@@ -5,9 +5,9 @@ num_workers: 8
 sort_in_batch: descending       # how to sort data in making batch
 sort_batch: descending          # how to sort created batches
 batch_type: length
-batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
+batch_bins: 4608000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
 # max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
-accum_grad: 4
+accum_grad: 8
 max_epoch: 15
 patience: none
 init: default
@@ -50,14 +50,14 @@ scheduler_conf:
 # ==============
 
 # Log
-use_wandb: False
+use_wandb: true
 wandb_project: KoreanAI2023
-wandb_name: cm_batch_0.0
+wandb_name: "[debug] hubert_0.0"
 
 # Noise dynamics
-# noise_scp: data/noise.scp
-# noise_apply_prob: 1.0
-# noise_db_range: '-5_0_5_10_15_20_9999'
+noise_scp: data/noise.scp
+noise_apply_prob: 1.0
+noise_db_range: '-5_0_5_10_15_20_9999'
 
 # Data
 preprocessor: default
@@ -133,13 +133,14 @@ preencoder_conf:
 
 encoder: hubert_hugging
 encoder_conf:
+    freeze_weights: false
     output_size: 768
     model_path: exp/hubert-base-korean/pytorch_model.bin
 
 # Post-encoding
 # postencoder: linear
 # postencoder_conf:
-#     output_size: 640
+#     output_size: 256
 
 # Decoding
 decoder: transformer

@@ -5,10 +5,10 @@ num_workers: 8
 sort_in_batch: descending       # how to sort data in making batch
 sort_batch: descending          # how to sort created batches
 batch_type: length
-batch_bins: 12288000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
+batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
 # max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
-accum_grad: 3
-max_epoch: 50
+accum_grad: 4
+max_epoch: 15
 patience: none
 init: default
 best_model_criterion:
@@ -16,10 +16,10 @@ best_model_criterion:
     - acc
     - max
 keep_nbest_models: 10
-# nbest_averaging_interval: 10
+nbest_averaging_interval: 30
 
 dry_run: false
-use_amp: false
+use_amp: true
 cudnn_deterministic: true
 cudnn_benchmark: true
 
@@ -40,23 +40,24 @@ optim_conf:
     eps: 0.00000001
     lr: 0.001
     weight_decay: 0.000001
-scheduler: warmuplr
+scheduler: cosinewarmup
 scheduler_conf:
-    warmup_steps: 2500
+    warmup_epochs: 5
+    num_epochs: 15
 
 # ==============
 # Train Setup
 # ==============
 
 # Log
-use_wandb: False
+use_wandb: true
 wandb_project: KoreanAI2023
-wandb_name: debug_0.0
+wandb_name: "[debug] squeeze_1.0"
 
 # Noise dynamics
-# noise_scp: data/noise.scp
-# noise_apply_prob: 1.0
-# noise_db_range: '-5_0_5_10_15_20_9999'
+noise_scp: data/noise.scp
+noise_apply_prob: 1.0
+noise_db_range: '-5_0_5_10_15_20_9999'
 
 # Data
 preprocessor: default
@@ -129,12 +130,24 @@ normalize_conf:
 preencoder:
 preencoder_conf:
 
-encoder: rnn
+encoder: squeezeformer
 encoder_conf:
-    output_size: 320
-    hidden_size: 320
-    num_layers: 6
-    dropout: 0.1
+    output_size: 256
+    attention_heads: 4
+    linear_units: 2048
+    num_blocks: 12
+    dropout_rate: 0.1
+    positional_dropout_rate: 0.1
+    attention_dropout_rate: 0.1
+    input_layer: dwconv2d
+    normalize_before: false
+    macaron_style: true
+    rel_pos_type: latest
+    pos_enc_layer_type: rel_pos
+    selfattention_layer_type: rel_selfattn
+    activation_type: swish
+    use_cnn_module: true
+    cnn_module_kernel: 31
 
 # Post-encoding
 # postencoder: linear
@@ -142,8 +155,12 @@ encoder_conf:
 #     output_size: 640
 
 # Decoding
-decoder: rnn
+decoder: transformer
 decoder_conf:
-    hidden_size: 320
-    num_layers: 3
-    dropout: 0.1
+    attention_heads: 4
+    linear_units: 2048
+    num_blocks: 3
+    dropout_rate: 0.1
+    positional_dropout_rate: 0.1
+    self_attention_dropout_rate: 0.1
+    src_attention_dropout_rate: 0.1

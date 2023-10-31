@@ -8,7 +8,7 @@ batch_type: length
 batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
 # max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
 accum_grad: 4
-max_epoch: 100
+max_epoch: 15
 patience: none
 init: default
 best_model_criterion:
@@ -19,7 +19,7 @@ keep_nbest_models: 10
 nbest_averaging_interval: 30
 
 dry_run: false
-use_amp: false
+use_amp: true
 cudnn_deterministic: true
 cudnn_benchmark: true
 
@@ -43,21 +43,21 @@ optim_conf:
 scheduler: cosinewarmup
 scheduler_conf:
     warmup_epochs: 5
-    num_epochs: 100
+    num_epochs: 15
 
 # ==============
 # Train Setup
 # ==============
 
 # Log
-use_wandb: False
+use_wandb: True
 wandb_project: KoreanAI2023
-wandb_name: debug_0.0
+wandb_name: "[debug] cm_1.0"
 
 # Noise dynamics
-# noise_scp: data/noise.scp
-# noise_apply_prob: 1.0
-# noise_db_range: '-5_0_5_10_15_20_9999'
+noise_scp: data/noise.scp
+noise_apply_prob: 1.0
+noise_db_range: '-5_0_5_10_15_20_9999'
 
 # Data
 preprocessor: default
@@ -159,7 +159,7 @@ decoder: transformer
 decoder_conf:
     attention_heads: 4
     linear_units: 2048
-    num_blocks: 2
+    num_blocks: 3
     dropout_rate: 0.1
     positional_dropout_rate: 0.1
     self_attention_dropout_rate: 0.1
