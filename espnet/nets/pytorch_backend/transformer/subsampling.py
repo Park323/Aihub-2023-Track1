@@ -117,7 +117,7 @@ class Conv2dSubsampling(torch.nn.Module):
         self.conv = torch.nn.Sequential(
             torch.nn.Conv2d(1, odim, 3, 2),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(odim, odim, 3, 2, groups=odim if depthwise else None),
+            torch.nn.Conv2d(odim, odim, 3, 2, groups=odim if depthwise else 1),
             torch.nn.ReLU(),
         )
         self.out = torch.nn.Sequential(
