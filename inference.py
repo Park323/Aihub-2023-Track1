@@ -9,6 +9,7 @@ from torch import Tensor
 
 from espnet2.bin.asr_inference import Speech2Text
 from espnet2.text.korean_separator import grp2char
+from espnet2.asr.encoder.huggingface_whisper_encoder import HuggingfaceWhisperEncoder
 
 
 def load_audio(audio_path: str, extension: str = 'pcm') -> np.ndarray:
@@ -45,19 +46,21 @@ def load_audio(audio_path: str, extension: str = 'pcm') -> np.ndarray:
         print('IOError in {0}'.format(audio_path))
         return None
 
-def _inference(path, model, **kwargs):
+def _inference(path, model, debug=False, **kwargs):
     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Start inference", path)
+    
+    split = True if isinstance(model.encoder, HuggingfaceWhisperEncoder) else False
     
     device = "cuda"
     model = model.to(device)
-    stt = Speech2Text(asr_model=model, ctc_weight=0.1, device="cuda")
+    stt = Speech2Text(asr_model=model, ctc_weight=0.0, beam_size=1, device="cuda")
 
     results = []
     for i in glob(os.path.join(path, '*')):
         results.append(
             {
                 'filename': i.split('/')[-1],
-                'text': single_infer(stt, i)
+                'text': single_infer(stt, i, debug=debug, split=split)
             }
         )
     print(time.strftime("%Y-%m-%d/%H:%M", time.localtime()), "Inference finished")
@@ -66,7 +69,9 @@ def _inference(path, model, **kwargs):
 def inference_subprocess(gpu_id:int, job_id:int, paths, model, return_list, debug=False):
     if debug:
         print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), job_id, "started on pid:", os.getpid())
-    # device = f"cuda:{gpu_id}"
+    
+    split = True if isinstance(model.encoder, HuggingfaceWhisperEncoder) else False
+    
     device = f"cuda"
     model = model.to(device)
     
@@ -83,24 +88,26 @@ def inference_subprocess(gpu_id:int, job_id:int, paths, model, return_list, debu
         lm_file=lm_file, lm_train_config=lm_train_config, lm_weight=lm_weight,
         ctc_weight=0.0, beam_size=1) ################# Debug config ###############
 
-    for i in paths:
+    for idx, i in enumerate(paths):
+        # if idx % 1000 == 0:
+        #     print(f"[JOB {job_id}] Processed {idx}...")
         with torch.autocast(device_type=device):
-            return_list[i.split('/')[-1]] = single_infer(stt, i, debug=debug)
+            return_list[i.split('/')[-1]] = single_infer(stt, i, debug=debug, split=split)
 
 def inference(path, model, debug=False, **kwargs):
     """Inference Multiprocessing"""
     import torch.multiprocessing as mp
     print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "Start inference", path)
     
-    torch.multiprocessing.set_start_method("spawn")
+    torch.multiprocessing.set_start_method("spawn", force=True)
 
-    n_gpu = torch.cuda.device_count()            ################# Debug environ. ###############
-    # inference_nj = n_gpu * 8
+    ################# Debug environ. ###############
+    n_gpu = torch.cuda.device_count()            
     inference_nj = 4
     test_paths = glob(os.path.join(path, '*'))
     if debug:
         test_paths = sorted(test_paths)[:5000]
-        print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), f"{len(test_paths)} of Inference data collected by {inference_nj} jobs with {n_gpu}", path)
+    print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), f"{len(test_paths)} of Inference data collected by {inference_nj} jobs with {n_gpu}", path)
     
     manager = mp.Manager()
     return_dict = manager.dict()
@@ -122,13 +129,24 @@ def inference(path, model, debug=False, **kwargs):
             'filename': key,
             'text': value})
 
-    print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "Inference finished")
+    print(time.strftime("%Y-%m-%d/%H:%M:%S", time.localtime()), "Inference finished,", len(results), "items")
     return sorted(results, key=lambda x: x['filename'])
 
 
-def single_infer(stt, path, debug=False):
+def single_infer(stt, path, debug=False, split=False):
     signal = load_audio(path)
-    text, token, token_int, hypothesis = stt(signal)[0]
+    
+    if split and len(signal) >= 30 * 16000:
+        bound_a = int(20*16000)
+        bound_b = int(19.9*16000)
+        signal_a = signal[:bound_a]
+        signal_b = signal[bound_b:]
+        text_a, *_ = stt(signal_a)[0]
+        text_b, *_ = stt(signal_b)[0]
+        text = text_a + text_b
+    else:
+        text, token, token_int, hypothesis = stt(signal)[0]
+    
     if stt.asr_model.token_normalize:
         text = grp2char(text)
     if debug:

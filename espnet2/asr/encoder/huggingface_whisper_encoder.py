@@ -15,9 +15,11 @@ from espnet2.asr.encoder.abs_encoder import AbsEncoder
 
 
 class HuggingfaceWhisperEncoder(AbsEncoder):
-    def __init__(self, input_size: int = 80, output_size: int = 384, model_path: str="TheoJo/whisper-tiny-ko", freeze_weights: bool = False):
+    def __init__(self, input_size: int = 80, output_size: int = 384, n_layer:int = 12, model_path: str="TheoJo/whisper-tiny-ko", freeze_weights: bool = False):
         super().__init__()
         self.encoder = AutoModelForSpeechSeq2Seq.from_pretrained(model_path).model.encoder
+        self.encoder.layers = self.encoder.layers[:n_layer]
+        
         self.output_size_ = output_size
         
         self.freeze_weights = freeze_weights

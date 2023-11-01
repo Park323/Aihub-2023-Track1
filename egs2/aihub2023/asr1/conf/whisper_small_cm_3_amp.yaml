@@ -5,10 +5,10 @@ num_workers: 8
 sort_in_batch: descending       # how to sort data in making batch
 sort_batch: descending          # how to sort created batches
 batch_type: length
-batch_bins: 9216000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
+batch_bins: 6144000 # 9216000 # 36,864,000 # 20 * 4 * 460,800 = 1,800 frames / 25 (FPS) * 16,000 (SR) * 32 (n GPU)
 # max_utt_len: 16000 # 64,000 / 96,000 / 192,000 / 384,000
-accum_grad: 4
-max_epoch: 100
+accum_grad: 6
+max_epoch: 70
 patience: none
 init: default
 best_model_criterion:
@@ -43,7 +43,7 @@ optim_conf:
 scheduler: cosinewarmup
 scheduler_conf:
     warmup_epochs: 5
-    num_epochs: 100
+    num_epochs: 70
 
 # ==============
 # Train Setup
@@ -52,7 +52,7 @@ scheduler_conf:
 # Log
 use_wandb: true
 wandb_project: KoreanAI2023
-wandb_name: whisper_1.0
+wandb_name: "whisper_small_cm_1.0"
 
 # Noise dynamics
 noise_scp: data/noise.scp
@@ -132,14 +132,30 @@ preencoder_conf:
 
 encoder: whisper_hugging
 encoder_conf:
-    output_size: 384
-    model_path: "TheoJo/whisper-tiny-ko"
+    n_layer: 12
+    output_size: 768
+    model_path: "seastar105/whisper-small-ko-zeroth"
     freeze_weights: false
 
 # Post-encoding
-# postencoder: linear
-# postencoder_conf:
-#     output_size: 640
+postencoder: conformer
+postencoder_conf:
+    output_size: 384
+    attention_heads: 4
+    linear_units: 2048
+    num_blocks: 1
+    dropout_rate: 0.1
+    positional_dropout_rate: 0.1
+    attention_dropout_rate: 0.1
+    input_layer: linear
+    normalize_before: true
+    macaron_style: true
+    rel_pos_type: latest
+    pos_enc_layer_type: rel_pos
+    selfattention_layer_type: rel_selfattn
+    activation_type: swish
+    use_cnn_module: true
+    cnn_module_kernel: 31
 
 # Decoding
 decoder: transformer

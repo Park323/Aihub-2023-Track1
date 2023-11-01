@@ -52,7 +52,7 @@ scheduler_conf:
 # Log
 use_wandb: true
 wandb_project: KoreanAI2023
-wandb_name: whisper_1.0
+wandb_name: whisper_small_1.0
 
 # Noise dynamics
 noise_scp: data/noise.scp
@@ -132,8 +132,8 @@ preencoder_conf:
 
 encoder: whisper_hugging
 encoder_conf:
-    output_size: 384
-    model_path: "TheoJo/whisper-tiny-ko"
+    output_size: 768
+    model_path: "seastar105/whisper-small-ko-zeroth"
     freeze_weights: false
 
 # Post-encoding
