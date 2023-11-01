@@ -136,14 +136,23 @@ def inference(path, model, debug=False, **kwargs):
 def single_infer(stt, path, debug=False, split=False):
     signal = load_audio(path)
     
-    if split and len(signal) >= 30 * 16000:
-        bound_a = int(20*16000)
-        bound_b = int(19.9*16000)
-        signal_a = signal[:bound_a]
-        signal_b = signal[bound_b:]
-        text_a, *_ = stt(signal_a)[0]
-        text_b, *_ = stt(signal_b)[0]
-        text = text_a + text_b
+    if split:
+        text = ""
+        max_sec = 30
+        split_sec = 25
+        overlap_sec = 0.05
+        while len(signal) >= max_sec * 16000:
+            bound_a = int(split_sec*16000)
+            bound_b = int((split_sec-overlap_sec)*16000)
+            
+            signal_seg = signal[:bound_a]
+            text_seg, *_ = stt(signal_seg)[0]
+            text += text_seg
+        
+            signal = signal[bound_b:]
+        
+        text_seg, *_ = stt(signal)[0]
+        text += text_seg
     else:
         text, token, token_int, hypothesis = stt(signal)[0]
     
